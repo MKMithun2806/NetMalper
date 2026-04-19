@@ -21,8 +21,10 @@ winget install nmap ; pip install python-nmap ; Invoke-WebRequest -Uri "https://
 
 ## For Docker
 
+No Install needed for this just run it
+
 ```bash
-docker run --rm -it --network host -v $(pwd):/app mkmithun2806/netmalper <target>
+docker run --rm -it --network host -v $(pwd):/app mitchaster/netmalper:latest <target> --output scan.json
 ```
 
 # Vizualizer
