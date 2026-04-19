@@ -19,6 +19,7 @@ winget install nmap ; pip install python-nmap ; Invoke-WebRequest -Uri "https://
 ```
 *Note: On Windows, Youll have to will run it using python NetMalper.py*
 
-## Vizualizer
+# Vizualizer
 
 It is live on [NetMalper Visualizer](http://threejs-rubiks-cube-mitch.s3-website.ap-south-2.amazonaws.com/?hl=en-IN)
+
