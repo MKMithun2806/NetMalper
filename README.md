@@ -1,3 +1,9 @@
+# <p align="left"><img src="debian/logo.svg" alt="NETMALPER" height="500"></p>
+
+**Automated Reconnaissance & 3D Intelligence Mapping**
+
+---
+
 # Features
 - Zero-Config Scanning: Automatic dependency handling via Docker.
 - Red Team Ready: Optimized for system shell and infrastructure reconnaissance.
