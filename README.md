@@ -9,7 +9,7 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 # Visualization
 - NetMalper doesn't just give you a wall of text. It generates a structured intelligence map.
 - Run a scan with the --output scan.json flag ( For Docker only )
-- Upload the resulting file to the NetMalper 3D Visualizer.
+- Upload the resulting file to the [NetMalper 3D Visualizer](http://threejs-rubiks-cube-mitch.s3-website.ap-south-2.amazonaws.com).
 - Explore your target's attack surface in an interactive Three.js environment.
 
 # How To Use:
