@@ -6,7 +6,6 @@
 
 # Features
 - Zero-Config Scanning: Automatic dependency handling via Docker.
-- Red Team Ready: Optimized for system shell and infrastructure reconnaissance.
 - Multi-Arch Support: Tested on Raspberry Pi 4B (ARM64) and high-performance x86 nodes.
 - Visual Integration: Native JSON support for force-directed graph mapping.
 
