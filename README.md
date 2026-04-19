@@ -25,6 +25,7 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 ```bash
 docker run --rm -it --network host -v $(pwd):/data mitchaster/netmalper:latest nmap.scanme.org --out /data/scan.json
 ```
+**With Docker Ofc**
 ---
 
 ## Native Installation 
@@ -45,4 +46,7 @@ brew install nmap python3 && curl -L -o NetMalper "https://raw.githubusercontent
 ```bash
 winget install nmap ; pip install python-nmap ; Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MKMithun2806/NetMalper/main/netmalper.py" -OutFile "NetMalper.py"
 ```
-*Note: On Windows, Youll have to will run it using python NetMalper.py*
+*Note: On Windows, Youll have to will run it using*
+```bash
+python NetMalper.py
+```
