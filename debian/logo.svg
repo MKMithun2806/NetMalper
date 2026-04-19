@@ -1,0 +1,13 @@
+<svg width="300" height="50" viewBox="0 0 300 50" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;800&amp;display=swap');
+      .net { font: 800 32px 'Syne', sans-serif; fill: #ff6b6b; text-transform: uppercase; }
+      .malper { font: 400 32px 'Syne', sans-serif; fill: #6b6b8a; text-transform: uppercase; }
+    </style>
+  </defs>
+  <text x="0" y="35">
+    <tspan class="net">NET</tspan><tspan class="malper">MALPER</tspan>
+  </text>
+</svg>
+
