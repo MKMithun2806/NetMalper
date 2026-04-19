@@ -1,5 +1,25 @@
-# Installation
+# Features
+- Zero-Config Scanning: Automatic dependency handling via Docker.
+- Red Team Ready: Optimized for system shell and infrastructure reconnaissance.
+- Multi-Arch Support: Tested on Raspberry Pi 4B (ARM64) and high-performance x86 nodes.
+- Visual Integration: Native JSON support for force-directed graph mapping.
 
+Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
+
+# Visualization
+- NetMalper doesn't just give you a wall of text. It generates a structured intelligence map.
+- Run a scan with the --output scan.json flag ( For Docker only )
+- Upload the resulting file to the NetMalper 3D Visualizer.
+- Explore your target's attack surface in an interactive Three.js environment.
+
+# How To Use:
+
+## QuickStart
+*The easiest way to run NetMalper without installing dependencies:*
+```bash
+docker run --rm -it --network host -v $(pwd):/app mitchaster/netmalper:latest <target_ip_or_subnet> --output scan.json
+```
+## Native Installation 
 To install NetMalper on any **Debian-based** system (Ubuntu, Kali, Raspberry Pi OS), run:
 
 ```bash
@@ -18,16 +38,3 @@ brew install nmap python3 && curl -L -o NetMalper "https://raw.githubusercontent
 winget install nmap ; pip install python-nmap ; Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MKMithun2806/NetMalper/main/netmalper.py" -OutFile "NetMalper.py"
 ```
 *Note: On Windows, Youll have to will run it using python NetMalper.py*
-
-## For Docker
-
-No Install needed for this just run it
-
-```bash
-docker run --rm -it --network host -v $(pwd):/app mitchaster/netmalper:latest <target> --output scan.json
-```
-
-# Vizualizer
-
-It is live on [NetMalper Visualizer](http://threejs-rubiks-cube-mitch.s3-website.ap-south-2.amazonaws.com/?hl=en-IN)
-
