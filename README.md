@@ -1,11 +1,3 @@
-<p align="left">
-  <img src="https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=45&duration=1&pause=0&color=FF6B6B&width=435&lines=NET%3Cspan+style%3D%22color%3A%236B6B8A%3B+font-weight%3A400%22%3EMALPER%3C%2Fspan%3E" alt="NETMALPER" />
-</p>
-
-**Automated Reconnaissance & 3D Intelligence Mapping**
-
----
-
 # Features
 - Zero-Config Scanning: Automatic dependency handling via Docker.
 - Red Team Ready: Optimized for system shell and infrastructure reconnaissance.
