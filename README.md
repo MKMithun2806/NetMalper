@@ -16,8 +16,8 @@ brew install nmap python3 && curl -L -o NetMalper "https://raw.githubusercontent
 
 ```bash
 winget install nmap ; pip install python-nmap ; Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MKMithun2806/NetMalper/main/netmalper.py" -OutFile "NetMalper.py"
-
 ```
+*Note: On Windows, Youll have to will run it using python NetMalper.py*
 
 ## Vizualizer
 
