@@ -40,6 +40,13 @@ wget -qO netmalper.deb "https://github.com/MKMithun2806/NetMalper/releases/downl
 brew install nmap python3 && curl -L -o NetMalper "https://raw.githubusercontent.com/MKMithun2806/NetMalper/main/netmalper.py" && chmod +x NetMalper && sudo mv NetMalper /usr/local/bin/
 ```
 
+*To run ( U might get errors about therool being from an unknown dev*
+
+```bash
+NetMalper <target_ip_or_subnet> --out graph.json
+```
+---
+
 ## For Windows ( Requires Admin )
 
 ```bash
