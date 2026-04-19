@@ -1,0 +1,13 @@
+Source: netmalper
+Section: utils
+Priority: optional
+Maintainer: Mithun Krish <your-email@example.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.5.0
+
+Package: netmalper
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, nmap, python3
+Description: Network reconnaissance mapper with force-directed graph output.
+ netmalper merges nmap data with custom socket scans to create 
+ interactive visual maps of network infrastructure.

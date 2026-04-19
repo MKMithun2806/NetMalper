@@ -1,0 +1,6 @@
+netmalper (2.0.0-1) noble; urgency=medium
+
+  * Initial release of NetMalper.
+  * Added automated reconnaissance pipeline.
+
+ -- Mithun Krish <mitchastertheblaster@gmail.com>  Sun, 19 Apr 2026 13:30:00 +0530
