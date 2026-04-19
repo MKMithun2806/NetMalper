@@ -24,8 +24,9 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 *The easiest way to run NetMalper without installing dependencies:*
 ```bash
 docker run --rm -it --network host -v $(pwd):/data mitchaster/netmalper:latest nmap.scanme.org --out /data/scan.json
-
 ```
+---
+
 ## Native Installation 
 To install NetMalper on any **Debian-based** system (Ubuntu, Kali, Raspberry Pi OS), run:
 
