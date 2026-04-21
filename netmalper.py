@@ -685,8 +685,14 @@ def main():
     args = ap.parse_args()
 
     target   = args.target.lower().strip()
-    target   = re.sub(r'^https?://', '', target).rstrip("/")
-    out_path = args.out or f"{target.replace('.','_')}_graph.json"
+    target   = re.sub(r'^https?://', '', target)   # strip scheme
+    target   = target.split('/')[0]                # strip any path — keep hostname only
+    target   = target.split('?')[0]                # strip query string just in case
+    target   = target.rstrip('.')                  # trailing dot cleanup
+
+    # safe filename: replace everything except alphanumeric, dash, dot
+    safe_name = re.sub(r'[^\w.\-]', '_', target)
+    out_path  = args.out or f"{safe_name}_graph.json"
 
     is_root  = check_root()
     nmap_bin = None if args.no_nmap else find_nmap()
