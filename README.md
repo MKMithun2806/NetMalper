@@ -20,6 +20,29 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 - Upload the resulting file to the [NetMalper 3D Visualizer](http://threejs-rubiks-cube-mitch.s3-website.ap-south-2.amazonaws.com).
 - Explore your target's attack surface in an interactive Three.js environment.
 
+---
+
+### Flags
+
+| Flag | Effect |
+|------|--------|
+| `--ports PORTS` | Specify ports to scan. Supports lists (`80,443`) or ranges (`1-1024`). |
+| `--subdomains FILE` | Provide a wordlist file for subdomain brute-force. |
+| `--out FILE` | Output JSON file path. Default: `<target>_graph.json`. |
+| `--timeout SEC` | Per-probe timeout in seconds. Default: `3`. |
+| `--threads N` | Number of threads for socket scanning. Default: `30`. |
+| `--nmap-timing {1-5}` | Control Nmap timing template (1 = slow/stealthy, 5 = fast/aggressive). Default: `4`. |
+| `--no-nmap` | Disable Nmap scanning entirely (socket-only mode). |
+| `--no-socket` | Disable socket scanner (Nmap-only mode). |
+| `--no-http` | Skip HTTP endpoint probing. |
+| `--no-ports` | Skip all port scanning. |
+| `--no-subs` | Skip subdomain enumeration. |
+| `--no-dns` | Skip DNS resolution and chain mapping. |
+| `--open-viewer` | Automatically open the HTML graph viewer after scan. |
+| `--viewer FILE` | Specify custom path to `netmalper_viewer.html`. |
+
+---
+
 # How To Use:
 
 ## QuickStart ( To Try the tool )
@@ -48,27 +71,6 @@ brew install nmap python3 && curl -L -o NetMalper "https://raw.githubusercontent
 ```bash
 NetMalper <target_ip_or_subnet> --out graph.json
 ```
----
-
-### Flags
-
-| Flag | Effect |
-|------|--------|
-| `--ports PORTS` | Specify ports to scan. Supports lists (`80,443`) or ranges (`1-1024`). |
-| `--subdomains FILE` | Provide a wordlist file for subdomain brute-force. |
-| `--out FILE` | Output JSON file path. Default: `<target>_graph.json`. |
-| `--timeout SEC` | Per-probe timeout in seconds. Default: `3`. |
-| `--threads N` | Number of threads for socket scanning. Default: `30`. |
-| `--nmap-timing {1-5}` | Control Nmap timing template (1 = slow/stealthy, 5 = fast/aggressive). Default: `4`. |
-| `--no-nmap` | Disable Nmap scanning entirely (socket-only mode). |
-| `--no-socket` | Disable socket scanner (Nmap-only mode). |
-| `--no-http` | Skip HTTP endpoint probing. |
-| `--no-ports` | Skip all port scanning. |
-| `--no-subs` | Skip subdomain enumeration. |
-| `--no-dns` | Skip DNS resolution and chain mapping. |
-| `--open-viewer` | Automatically open the HTML graph viewer after scan. |
-| `--viewer FILE` | Specify custom path to `netmalper_viewer.html`. |
-
 ---
 
 ## For Windows ( Requires Admin )
