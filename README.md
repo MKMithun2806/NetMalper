@@ -42,6 +42,11 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 | `--viewer FILE` | Specify custom path to `netmalper_viewer.html`. |
 | `--naabu-ports 1-10000` | scan only first 10k ports (faster) |
 | `--naabu-rate 2000` | packets/sec (raise for fast networks) |
+| `--no-amass` | Skip Amass |
+| `--amass-timeout 180` | give amass more time on big targets |
+| `--no-wordlist` | amass only |
+| `--no-naabu` | skip discovery, use default port list |
+
 
 ---
 
