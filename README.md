@@ -40,6 +40,8 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 | `--no-dns` | Skip DNS resolution and chain mapping. |
 | `--open-viewer` | Automatically open the HTML graph viewer after scan. |
 | `--viewer FILE` | Specify custom path to `netmalper_viewer.html`. |
+| `--naabu-ports 1-10000` | scan only first 10k ports (faster) |
+| `--naabu-rate 2000` | packets/sec (raise for fast networks) |
 
 ---
 
