@@ -55,7 +55,7 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 ## QuickStart ( To Try the tool )
 *The easiest way to run NetMalper without installing dependencies is by using docker:*
 ```bash
-docker run --rm -it --network host -v $(pwd):/data mitchaster/netmalper:latest nmap.scanme.org --out /data/graph.json
+docker run --rm -it --network host -v $(pwd):/app mitchaster/malper-suite:latest nmap.scanme.org
 ```
 
 ---
