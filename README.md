@@ -64,10 +64,11 @@ docker run --rm -it --network host -v $(pwd):/app mitchaster/malper-suite:latest
 To install NetMalper on any **Debian-based** system (Ubuntu, Kali, Raspberry Pi OS), run:
 
 ```bash
-LATEST_DEB=$(curl -s https://api.github.com/repos/MKMithun2806/NetMalper/releases/latest | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url') \
-&& wget -qO netmalper.deb "$LATEST_DEB" \
-&& sudo apt install -y ./netmalper.deb \
-&& rm netmalper.deb
+URL=$(curl -s https://api.github.com/repos/MKMithun2806/NetMalper/releases | grep browser_download_url | grep .deb | cut -d '"' -f 4 | head -n 1) && \
+curl -L -o netmalper.deb "$URL" && \
+sudo apt install -y ./netmalper.deb && \
+sudo apt-get install -f -y && \
+rm -f netmalper.deb
 ```
 
 ## For Macs
