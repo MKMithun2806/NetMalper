@@ -15,10 +15,9 @@
 Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 
 # Visualization
-- NetMalper doesn't just give you a wall of text. It generates a structured intelligence map.
-- Run a scan with the --output scan.json flag ( For Docker only )
-- Upload the resulting file to the [NetMalper 3D Visualizer](http://threejs-rubiks-cube-mitch.s3-website.ap-south-2.amazonaws.com).
-- Explore your target's attack surface in an interactive Three.js environment.
+- NetMalper generates a structured intelligence map instead of a wall of text.
+- Run a scan with `--out scan.json`, then open [`netmalper_vizualizer.html`](./netmalper_vizualizer.html) or use `--open-viewer`.
+- The visualizer uses React Flow for pan/zoom, filtering, connected-node focus, and scan metadata panels.
 
 ---
 
@@ -39,7 +38,7 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 | `--no-subs` | Skip subdomain enumeration. |
 | `--no-dns` | Skip DNS resolution and chain mapping. |
 | `--open-viewer` | Automatically open the HTML graph viewer after scan. |
-| `--viewer FILE` | Specify custom path to `netmalper_viewer.html`. |
+| `--viewer FILE` | Specify custom path to `netmalper_vizualizer.html`. |
 | `--naabu-ports 1-10000` | scan only first 10k ports (faster) |
 | `--naabu-rate 2000` | packets/sec (raise for fast networks) |
 | `--no-amass` | Skip Amass |

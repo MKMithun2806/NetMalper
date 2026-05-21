@@ -40,7 +40,7 @@ Options:
   --no-subs              Skip all subdomain enumeration
   --no-dns               Skip DNS chain resolution
   --open-viewer          Open viewer after scan
-  --viewer FILE          Path to netmalper_viewer.html
+  --viewer FILE          Path to netmalper_vizualizer.html
 """
 
 import argparse
@@ -60,6 +60,7 @@ import urllib.error
 import urllib.parse
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 VERSION = "3.0.0"
@@ -771,7 +772,7 @@ def main():
     ap.add_argument("--no-subs",        action="store_true")
     ap.add_argument("--no-dns",         action="store_true")
     ap.add_argument("--open-viewer",    action="store_true")
-    ap.add_argument("--viewer",         default="netmalper_viewer.html")
+    ap.add_argument("--viewer",         default="netmalper_vizualizer.html")
     args = ap.parse_args()
 
     # ── sanitize target ───────────────────────────────────────────────────────
@@ -926,9 +927,10 @@ def main():
 
     if args.open_viewer and os.path.exists(args.viewer):
         import webbrowser
+        graph_uri = Path(out_path).resolve().as_uri()
         webbrowser.open(
             f"file://{os.path.abspath(args.viewer)}"
-            f"?graph={urllib.parse.quote(os.path.abspath(out_path))}"
+            f"?graph={urllib.parse.quote(graph_uri, safe='')}"
         )
 
     return out_path
