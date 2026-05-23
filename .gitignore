@@ -2,3 +2,9 @@ netmalper-shot.png
 __pycache__/
 __pycache__
 netmalper_V5_all.deb
+*.deb
+debian/netmalper/
+debian/.debhelper/
+debian/*.substvars
+debian/files
+debian/debhelper-build-stamp
