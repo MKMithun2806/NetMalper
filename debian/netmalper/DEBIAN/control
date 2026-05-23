@@ -1,0 +1,12 @@
+Package: netmalper
+Version: 3.0.0-1
+Architecture: all
+Maintainer: Mithun Krish <your-email@example.com>
+Installed-Size: 108
+Depends: python3, dnsutils, nmap
+Recommends: rustscan
+Section: utils
+Priority: optional
+Description: Network reconnaissance mapper with force-directed graph output.
+ netmalper merges nmap data with custom socket scans to create
+ interactive visual maps of network infrastructure.

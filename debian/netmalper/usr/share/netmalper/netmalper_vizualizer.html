@@ -1,0 +1,1583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>netmalper | React Flow visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xyflow/react@12.10.2/dist/style.css">
+<style>
+  :root {
+    --bg: #05070d;
+    --bg2: #0b1020;
+    --bg3: #101728;
+    --line: rgba(120, 140, 190, 0.18);
+    --line-strong: rgba(170, 190, 255, 0.3);
+    --text: #e7ecff;
+    --muted: #8b96b8;
+    --dim: #55607f;
+    --accent: #8fe3d6;
+    --accent-2: #f16a6a;
+    --panel: rgba(10, 14, 24, 0.86);
+    --panel-border: rgba(145, 160, 220, 0.18);
+    --shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+    --good: #6ee7b7;
+    --warn: #f6c177;
+    --bad: #ff7b72;
+  }
+
+  * { box-sizing: border-box; }
+  html, body, #root { width: 100%; height: 100%; }
+  body {
+    margin: 0;
+    overflow: hidden;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top left, rgba(121, 92, 255, 0.15), transparent 28%),
+      radial-gradient(circle at 85% 20%, rgba(122, 227, 214, 0.12), transparent 24%),
+      linear-gradient(180deg, #03050a 0%, #070b12 50%, #05070d 100%);
+    font-family: "JetBrains Mono", monospace;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: linear-gradient(180deg, rgba(0,0,0,0.72), rgba(0,0,0,0.15));
+    opacity: 0.7;
+  }
+
+  button, input {
+    font: inherit;
+  }
+  button {
+    border: 0;
+    cursor: pointer;
+  }
+
+  .app {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .topbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 40;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    background: linear-gradient(180deg, rgba(7, 10, 18, 0.96), rgba(7, 10, 18, 0.78));
+    border-bottom: 1px solid var(--panel-border);
+    backdrop-filter: blur(18px);
+  }
+  .brand {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    min-width: 172px;
+  }
+  .brand-title {
+    font-family: "Syne", sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .brand-title .accent { color: var(--accent-2); }
+  .brand-subtitle {
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .meta-strip {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+  }
+  .meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 11px;
+    border-radius: 999px;
+    background: rgba(16, 23, 40, 0.88);
+    border: 1px solid rgba(145, 160, 220, 0.14);
+    color: var(--muted);
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .meta-chip strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .meta-chip .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(143, 227, 214, 0.55);
+  }
+
+  .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .search {
+    width: min(320px, 36vw);
+    height: 40px;
+    border-radius: 12px;
+    padding: 0 14px;
+    color: var(--text);
+    background: rgba(10, 14, 24, 0.92);
+    border: 1px solid rgba(145, 160, 220, 0.16);
+    outline: none;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+  }
+  .search:focus {
+    border-color: rgba(143, 227, 214, 0.45);
+    box-shadow: 0 0 0 3px rgba(143, 227, 214, 0.12);
+  }
+  .ghost-btn {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    color: var(--text);
+    background: rgba(16, 23, 40, 0.9);
+    border: 1px solid rgba(145, 160, 220, 0.16);
+    transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+  }
+  .ghost-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(143, 227, 214, 0.32);
+    background: rgba(20, 29, 49, 0.96);
+  }
+
+  .stage {
+    position: absolute;
+    inset: 72px 0 24px 0;
+  }
+
+  .legend, .details, .toolbar {
+    position: fixed;
+    z-index: 35;
+    backdrop-filter: blur(18px);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    box-shadow: var(--shadow);
+  }
+
+  .legend {
+    left: 16px;
+    top: 88px;
+    width: 250px;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid rgba(145, 160, 220, 0.12);
+  }
+  .panel-kicker {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .panel-title {
+    margin-top: 4px;
+    font-family: "Syne", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .panel-body {
+    padding: 12px 14px 14px;
+  }
+
+  .legend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 11px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(145, 160, 220, 0.1);
+    color: var(--text);
+    transition: transform 140ms ease, background 140ms ease, opacity 140ms ease;
+  }
+  .legend-item:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .legend-item.hidden {
+    opacity: 0.42;
+  }
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    box-shadow: 0 0 16px currentColor;
+    flex: 0 0 auto;
+  }
+  .legend-name {
+    text-transform: capitalize;
+    font-size: 11px;
+  }
+  .legend-count {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .details {
+    right: 16px;
+    top: 88px;
+    width: 340px;
+    max-height: calc(100vh - 120px);
+    border-radius: 18px;
+    overflow: hidden;
+    transform: translateX(380px);
+    transition: transform 220ms cubic-bezier(.2,.9,.2,1);
+  }
+  .details.visible {
+    transform: translateX(0);
+  }
+  .details-scroll {
+    max-height: calc(100vh - 174px);
+    overflow: auto;
+  }
+  .close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--muted);
+  }
+  .close-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .detail-section {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(145, 160, 220, 0.12);
+  }
+  .detail-section:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .detail-grid {
+    display: grid;
+    gap: 8px;
+  }
+  .kv {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    font-size: 11px;
+  }
+  .kv-key {
+    color: var(--muted);
+  }
+  .kv-val {
+    color: var(--text);
+    word-break: break-word;
+  }
+  .kv-val.good { color: var(--good); }
+  .kv-val.warn { color: var(--warn); }
+  .kv-val.bad { color: var(--bad); }
+  .node-blurb {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(145, 160, 220, 0.12);
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+  .code-box {
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(18, 24, 38, 0.9);
+    border: 1px solid rgba(143, 227, 214, 0.16);
+    color: #8fe3d6;
+    font-size: 10px;
+    line-height: 1.6;
+    max-height: 190px;
+    overflow: auto;
+  }
+  .connections {
+    display: grid;
+    gap: 8px;
+  }
+  .connection {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 11px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(145, 160, 220, 0.12);
+    color: var(--text);
+    transition: background 140ms ease, transform 140ms ease;
+    text-align: left;
+    width: 100%;
+  }
+  .connection:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .connection-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+  }
+  .connection-body {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+    flex: 1;
+  }
+  .connection-title {
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .connection-meta {
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .toolbar {
+    right: 16px;
+    bottom: 34px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 18px;
+  }
+  .tool-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    border: 1px solid rgba(145, 160, 220, 0.12);
+    transition: background 140ms ease, transform 140ms ease, border-color 140ms ease;
+  }
+  .tool-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(143, 227, 214, 0.3);
+  }
+  .tool-btn.active {
+    background: rgba(143, 227, 214, 0.14);
+    border-color: rgba(143, 227, 214, 0.36);
+    color: #b7fff1;
+  }
+
+  .statusbar {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 32;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 0 16px;
+    background: rgba(5, 7, 13, 0.88);
+    border-top: 1px solid rgba(145, 160, 220, 0.12);
+    color: var(--muted);
+    font-size: 10px;
+    backdrop-filter: blur(14px);
+  }
+  .status strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at center, rgba(143, 227, 214, 0.08), transparent 34%),
+      linear-gradient(180deg, rgba(5, 7, 13, 0.98), rgba(5, 7, 13, 0.96));
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+  .loader.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.01);
+  }
+  .loader-card {
+    width: min(640px, calc(100vw - 28px));
+    border-radius: 28px;
+    padding: 32px;
+    border: 1px solid rgba(145, 160, 220, 0.16);
+    background: rgba(10, 14, 24, 0.86);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .loader-title {
+    margin: 0;
+    font-family: "Syne", sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .loader-title .accent { color: var(--accent-2); }
+  .loader-copy {
+    margin: 14px auto 0;
+    max-width: 54ch;
+    color: var(--muted);
+    line-height: 1.8;
+    font-size: 12px;
+  }
+  .loader-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 22px;
+  }
+  .dropzone {
+    width: min(520px, 100%);
+    border-radius: 20px;
+    padding: 28px;
+    border: 1.5px dashed rgba(145, 160, 220, 0.32);
+    background: rgba(255, 255, 255, 0.02);
+    transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+    cursor: pointer;
+  }
+  .dropzone:hover, .dropzone.dragging {
+    border-color: rgba(143, 227, 214, 0.6);
+    background: rgba(143, 227, 214, 0.05);
+    transform: translateY(-1px);
+  }
+  .dropzone-icon {
+    font-size: 28px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .dropzone-main {
+    font-family: "Syne", sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .dropzone-sub {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .file-input {
+    display: none;
+  }
+  .error {
+    margin-top: 14px;
+    color: var(--bad);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .react-flow {
+    background: transparent;
+  }
+  .react-flow__renderer {
+    z-index: 2;
+  }
+  .react-flow__attribution {
+    display: none;
+  }
+  .hidden {
+    display: none !important;
+  }
+
+  .entity-node {
+    position: relative;
+    width: 100%;
+    min-height: 94px;
+    padding: 12px 14px 12px 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(145, 160, 220, 0.16);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+      rgba(11, 16, 28, 0.92);
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    overflow: hidden;
+    transition:
+      transform 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      opacity 160ms ease;
+  }
+  .entity-node::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 18%, transparent), transparent 52%);
+    pointer-events: none;
+  }
+  .entity-node:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 42%, rgba(145, 160, 220, 0.2));
+    box-shadow: 0 24px 44px rgba(0, 0, 0, 0.28);
+  }
+  .entity-node.is-selected {
+    border-color: color-mix(in srgb, var(--accent) 58%, rgba(255, 255, 255, 0.26));
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
+      0 24px 46px rgba(0, 0, 0, 0.34);
+  }
+  .entity-node.is-muted {
+    opacity: 0.16;
+  }
+  .entity-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .entity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    color: color-mix(in srgb, var(--accent) 84%, white);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .entity-state {
+    font-size: 9px;
+    color: var(--muted);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .entity-title {
+    margin-top: 12px;
+    font-family: "Syne", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    position: relative;
+    z-index: 1;
+    word-break: break-word;
+  }
+  .entity-subtitle {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+    word-break: break-word;
+  }
+  .entity-handle {
+    width: 8px !important;
+    height: 8px !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    background: color-mix(in srgb, var(--accent) 80%, white) !important;
+  }
+  .entity-root {
+    min-height: 106px;
+  }
+  .entity-root .entity-title {
+    font-size: 18px;
+  }
+  .entity-root .entity-badge {
+    font-size: 10px;
+  }
+
+  .react-flow__minimap {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(145, 160, 220, 0.16);
+  }
+
+  @media (max-width: 980px) {
+    .topbar {
+      height: 132px;
+      min-height: 132px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      overflow: hidden;
+    }
+    .brand {
+      min-width: 0;
+    }
+    .meta-strip {
+      width: 100%;
+      order: 3;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .top-actions {
+      width: 100%;
+      order: 2;
+    }
+    .meta-strip::-webkit-scrollbar {
+      height: 4px;
+    }
+    .meta-strip::-webkit-scrollbar-thumb {
+      background: rgba(145, 160, 220, 0.35);
+      border-radius: 999px;
+    }
+    .search {
+      width: 100%;
+    }
+    .stage {
+      inset: 132px 0 24px 0;
+    }
+    .legend {
+      left: 12px;
+      right: 12px;
+      width: auto;
+      top: 140px;
+      max-width: none;
+    }
+    .details {
+      left: 12px;
+      right: 12px;
+      width: auto;
+      top: auto;
+      bottom: 58px;
+      max-height: 28vh;
+      transform: translateY(150%);
+    }
+    .details.visible {
+      transform: translateY(0);
+    }
+    .toolbar {
+      right: 12px;
+      bottom: 64px;
+      flex-direction: row;
+    }
+    .statusbar {
+      height: 34px;
+      padding: 0 12px;
+      flex-wrap: wrap;
+      align-content: center;
+    }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.2.6/es2022/react.mjs",
+    "react/jsx-runtime": "https://esm.sh/react@19.2.6/es2022/jsx-runtime.mjs",
+    "react/jsx-dev-runtime": "https://esm.sh/react@19.2.6/es2022/jsx-dev-runtime.mjs",
+    "react-dom/client": "https://esm.sh/react-dom@19.2.6/es2022/client.mjs",
+    "react-dom": "https://esm.sh/react-dom@19.2.6/es2022/react-dom.mjs",
+    "htm": "https://esm.sh/htm@3.1.1/es2022/htm.mjs",
+    "@xyflow/react": "https://esm.sh/@xyflow/react@12.10.2/es2022/react.mjs"
+  }
+}
+</script>
+</head>
+<body>
+<div id="bootstrap" style="position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:#05070d;color:#e7ecff;font-family:JetBrains Mono,monospace;">
+  <div style="max-width:720px;padding:24px 28px;border:1px solid rgba(145,160,220,0.18);border-radius:20px;background:rgba(10,14,24,0.92);box-shadow:0 24px 80px rgba(0,0,0,0.4);">
+    <div style="font-family:Syne,sans-serif;font-size:28px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">net<span style="color:#f16a6a">malper</span></div>
+    <div style="color:#8b96b8;line-height:1.7;font-size:12px;">Loading React Flow viewer…</div>
+    <div id="bootstrap-error" style="margin-top:14px;color:#ff7b72;font-size:12px;line-height:1.6;white-space:pre-wrap;"></div>
+  </div>
+</div>
+<div id="root"></div>
+<script>
+  const bootstrapBox = () => document.getElementById("bootstrap-error");
+  const writeBootstrapError = (value) => {
+    const box = bootstrapBox();
+    if (box) box.textContent = String(value || "");
+  };
+  window.addEventListener("error", (event) => {
+    const msg = event?.error?.stack || event?.message || "Unknown viewer startup error";
+    writeBootstrapError(msg);
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event?.reason?.stack || event?.reason?.message || event?.reason || "Unknown promise rejection";
+    writeBootstrapError(reason);
+  });
+  const originalError = console.error.bind(console);
+  console.error = (...args) => {
+    originalError(...args);
+    writeBootstrapError(args.map((item) => {
+      if (item instanceof Error) return item.stack || item.message;
+      if (typeof item === "string") return item;
+      try { return JSON.stringify(item); } catch { return String(item); }
+    }).join(" "));
+  };
+  const originalWarn = console.warn.bind(console);
+  console.warn = (...args) => {
+    originalWarn(...args);
+    const box = bootstrapBox();
+    if (box && !box.textContent) {
+      box.textContent = args.map((item) => String(item)).join(" ");
+    }
+  };
+</script>
+<script type="module">
+import * as React from "react";
+import { createRoot } from "react-dom/client";
+import htm from "htm";
+import {
+  Background,
+  BackgroundVariant,
+  Handle,
+  MarkerType,
+  MiniMap,
+  Position,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
+} from "@xyflow/react";
+
+const html = htm.bind(React.createElement);
+const { useEffect, useMemo, useRef, useState } = React;
+
+const TYPE_CFG = {
+  root: { color: "#ff7a7a", width: 290 },
+  subdomain: { color: "#73f0dd", width: 270 },
+  cname: { color: "#f78ad7", width: 250 },
+  dns_record: { color: "#b59dff", width: 250 },
+  ip: { color: "#70d5ff", width: 250 },
+  port: { color: "#a2e3b7", width: 240 },
+  endpoint: { color: "#ffe08a", width: 240 },
+  service: { color: "#91f1f2", width: 230 },
+  os_guess: { color: "#ff9d67", width: 260 },
+  nse_finding: { color: "#f4b34f", width: 270 },
+  default: { color: "#94a0c8", width: 240 },
+};
+
+const TYPE_LEVEL = {
+  root: 0,
+  subdomain: 1,
+  cname: 1,
+  dns_record: 1,
+  ip: 2,
+  endpoint: 3,
+  port: 3,
+  service: 4,
+  os_guess: 4,
+  nse_finding: 5,
+};
+
+const EDGE_COLOR = "rgba(151, 166, 221, 0.55)";
+const EDGE_ACTIVE = "rgba(255, 255, 255, 0.92)";
+const NODE_SPACING_X = 300;
+const NODE_SPACING_Y = 150;
+
+function text(v) {
+  if (v === null || v === undefined) return "";
+  if (Array.isArray(v)) return v.map(text).filter(Boolean).join(", ");
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
+function formatTime(ts) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return String(ts);
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatDuration(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = Number(v);
+  if (Number.isNaN(n)) return String(v);
+  return `${n.toFixed(n < 10 ? 2 : 1)}s`;
+}
+
+function summarizeNode(node) {
+  const d = node.data || {};
+  switch (node.type) {
+    case "root":
+      return d.fqdn || node.label;
+    case "subdomain":
+      return Array.isArray(d.ips) && d.ips.length ? `${d.ips.length} IP${d.ips.length === 1 ? "" : "s"}` : "subdomain";
+    case "cname":
+      return d.fqdn || "CNAME";
+    case "dns_record":
+      return d.record_type ? `${d.record_type} record` : "DNS record";
+    case "ip":
+      return d.is_private ? "private IP" : (d.reverse_dns && d.reverse_dns !== node.label ? d.reverse_dns : "public IP");
+    case "port":
+      return [d.service, d.port ? `:${d.port}` : ""].filter(Boolean).join(" ");
+    case "endpoint":
+      return [d.status ? `HTTP ${d.status}` : "", d.server || ""].filter(Boolean).join(" • ") || "endpoint";
+    case "service":
+      return d.service || "service";
+    case "os_guess":
+      return d.accuracy ? `${d.accuracy}% confidence` : "OS guess";
+    case "nse_finding":
+      return d.script_id || "NSE output";
+    default:
+      return d.service || "";
+  }
+}
+
+function subtitleNode(node) {
+  const d = node.data || {};
+  switch (node.type) {
+    case "root":
+      return d.fqdn || "";
+    case "subdomain":
+      return d.fqdn || node.label;
+    case "cname":
+      return d.fqdn || "";
+    case "ip":
+      return [d.ip, d.reverse_dns && d.reverse_dns !== d.ip ? d.reverse_dns : "", d.is_private ? "private" : "public"].filter(Boolean).join(" • ");
+    case "port":
+      return [d.host, d.service, d.version_str].filter(Boolean).join(" • ");
+    case "endpoint":
+      return [d.url, d.content_type, d.server].filter(Boolean).join(" • ");
+    case "os_guess":
+      return [d.os_name, d.host].filter(Boolean).join(" • ");
+    case "nse_finding":
+      return [d.port ? `port ${d.port}` : "", d.host].filter(Boolean).join(" • ");
+    default:
+      return [d.host || "", d.service || ""].filter(Boolean).join(" • ");
+  }
+}
+
+function normalizeGraph(raw) {
+  const nodes = Array.isArray(raw?.nodes) ? raw.nodes : [];
+  const edges = Array.isArray(raw?.edges) ? raw.edges : [];
+  const meta = raw?.meta && typeof raw.meta === "object" ? { ...raw.meta } : {};
+
+  const normNodes = nodes.map((node, index) => {
+    const id = String(node?.id ?? `node-${index}`);
+    const label = String(node?.label ?? id);
+    const type = String(node?.type ?? "default");
+    const data = node?.data && typeof node.data === "object" ? { ...node.data } : {};
+    const searchText = [id, label, type, text(data)].join(" ").toLowerCase();
+    return {
+      id,
+      label,
+      type,
+      data,
+      summary: summarizeNode({ type, label, data }),
+      subtitle: subtitleNode({ type, label, data }),
+      searchText,
+    };
+  });
+
+  const normEdges = edges.map((edge, index) => {
+    const source = String(edge?.source ?? "");
+    const target = String(edge?.target ?? "");
+    return {
+      id: String(edge?.id ?? `edge-${index}-${source}-${target}`),
+      source,
+      target,
+      label: String(edge?.label ?? ""),
+    };
+  }).filter((edge) => edge.source && edge.target);
+
+  meta.node_count = meta.node_count ?? normNodes.length;
+  meta.edge_count = meta.edge_count ?? normEdges.length;
+
+  const nodeMap = new Map(normNodes.map((node) => [node.id, node]));
+  return {
+    meta,
+    nodes: normNodes,
+    edges: normEdges,
+    nodeMap,
+    signature: `${meta.timestamp || "no-ts"}:${normNodes.length}:${normEdges.length}`,
+  };
+}
+
+function buildLayout(graph, showLabels) {
+  const grouped = new Map();
+  graph.nodes.forEach((node) => {
+    const level = TYPE_LEVEL[node.type] ?? 2;
+    if (!grouped.has(level)) grouped.set(level, []);
+    grouped.get(level).push(node);
+  });
+
+  const flowNodes = [];
+  [...grouped.entries()].sort((a, b) => a[0] - b[0]).forEach(([level, items]) => {
+    items.sort((a, b) => a.label.localeCompare(b.label) || a.id.localeCompare(b.id));
+    const height = Math.max(0, (items.length - 1) * NODE_SPACING_Y);
+
+    items.forEach((node, index) => {
+      const cfg = TYPE_CFG[node.type] || TYPE_CFG.default;
+      const isRoot = node.type === "root";
+      flowNodes.push({
+        id: node.id,
+        type: "entity",
+        position: {
+          x: level * NODE_SPACING_X,
+          y: index * NODE_SPACING_Y - height / 2,
+        },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+        data: {
+          label: node.label,
+          nodeType: node.type,
+          accent: cfg.color,
+          summary: node.summary,
+          subtitle: node.subtitle,
+          details: node.data,
+          searchText: node.searchText,
+          showLabels,
+          root: isRoot,
+          muted: false,
+          focused: true,
+        },
+        style: {
+          width: cfg.width,
+          zIndex: isRoot ? 10 : 1,
+        },
+      });
+    });
+  });
+
+  const flowEdges = graph.edges.map((edge) => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    label: showLabels ? edge.label : "",
+    data: { baseLabel: edge.label },
+    type: "smoothstep",
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: EDGE_COLOR,
+      width: 16,
+      height: 16,
+    },
+    style: {
+      stroke: EDGE_COLOR,
+      strokeWidth: 1.4,
+    },
+    labelStyle: {
+      fill: "#c3caf0",
+      fontSize: 11,
+      fontWeight: 600,
+    },
+    labelBgStyle: {
+      fill: "rgba(9, 13, 22, 0.9)",
+      fillOpacity: 0.92,
+    },
+    labelBgPadding: [6, 3],
+    labelBgBorderRadius: 4,
+  }));
+
+  return { flowNodes, flowEdges };
+}
+
+function collectFocus(graph, selectedId) {
+  const visible = new Set();
+  const focused = new Set();
+  const connections = [];
+  if (!graph) return { visible, focused, connections };
+
+  graph.nodes.forEach((node) => visible.add(node.id));
+  if (!selectedId || !graph.nodeMap.has(selectedId)) {
+    graph.nodes.forEach((node) => focused.add(node.id));
+    return { visible, focused, connections };
+  }
+
+  focused.add(selectedId);
+  graph.edges.forEach((edge) => {
+    if (edge.source === selectedId || edge.target === selectedId) {
+      focused.add(edge.source);
+      focused.add(edge.target);
+      visible.add(edge.source);
+      visible.add(edge.target);
+      const neighborId = edge.source === selectedId ? edge.target : edge.source;
+      const neighbor = graph.nodeMap.get(neighborId);
+      if (neighbor) {
+        connections.push({
+          id: edge.id,
+          node: neighbor,
+          via: edge.label || "edge",
+          direction: edge.source === selectedId ? "→" : "←",
+        });
+      }
+    }
+  });
+  return { visible, focused, connections };
+}
+
+function buildDetailRows(details) {
+  return Object.entries(details || {})
+    .filter(([, value]) => value !== null && value !== undefined && value !== "" && !(Array.isArray(value) && value.length === 0))
+    .map(([key, value]) => {
+      const raw = text(value);
+      const cls = key === "status"
+        ? (Number(raw) >= 400 ? "bad" : Number(raw) >= 200 ? "good" : "warn")
+        : "";
+      return html`
+        <div className="kv" key=${key}>
+          <div className="kv-key">${key}</div>
+          <div className=${`kv-val ${cls}`}>${raw}</div>
+        </div>
+      `;
+    });
+}
+
+function EntityNode({ data, selected }) {
+  const isRoot = !!data.root;
+  return html`
+    <div className=${`entity-node entity-${data.nodeType} ${selected ? "is-selected" : ""} ${data.muted ? "is-muted" : ""} ${isRoot ? "entity-root" : ""}`}
+         style=${{ "--accent": data.accent || TYPE_CFG.default.color }}>
+      <${Handle} type="target" position=${Position.Left} className="entity-handle" />
+      <div className="entity-head">
+        <span className="entity-badge">${data.nodeType.replace(/_/g, " ")}</span>
+        <span className="entity-state">${data.summary || ""}</span>
+      </div>
+      <div className="entity-title">${data.label}</div>
+      ${data.showLabels ? html`<div className="entity-subtitle">${data.subtitle || ""}</div>` : null}
+      <${Handle} type="source" position=${Position.Right} className="entity-handle" />
+    </div>
+  `;
+}
+
+function App() {
+  const [graph, setGraph] = useState(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [search, setSearch] = useState("");
+  const [hiddenTypes, setHiddenTypes] = useState(() => new Set());
+  const [selectedId, setSelectedId] = useState(null);
+  const [hoverText, setHoverText] = useState("");
+  const [showLabels, setShowLabels] = useState(true);
+  const [loaderHidden, setLoaderHidden] = useState(false);
+  const [error, setError] = useState("");
+  const flowRef = useRef(null);
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    window.__viewerMounted = true;
+    document.getElementById("bootstrap")?.remove();
+  }, []);
+
+  const focus = useMemo(() => collectFocus(graph, selectedId), [graph, selectedId]);
+
+  useEffect(() => {
+    if (!graph) return;
+    const term = search.trim().toLowerCase();
+    setNodes((current) => current.map((node) => {
+      const raw = graph.nodeMap.get(node.id);
+      if (!raw) return node;
+      const match = !term || raw.searchText.includes(term);
+      const keptBySelection = selectedId && focus.focused.has(node.id);
+      const visible = !hiddenTypes.has(raw.type) && (match || keptBySelection);
+      const active = !selectedId || focus.focused.has(node.id);
+      const opacity = selectedId ? (active ? 1 : 0.12) : 1;
+      return {
+        ...node,
+        hidden: !visible,
+        data: {
+          ...node.data,
+          showLabels,
+          muted: selectedId ? !active : false,
+          focused: active,
+        },
+        style: {
+          ...node.style,
+          opacity,
+          filter: active ? "saturate(1)" : "saturate(0.7)",
+          transition: "opacity 160ms ease, filter 160ms ease, transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
+          zIndex: active ? 5 : 1,
+        },
+      };
+    }));
+    setEdges((current) => current.map((edge) => {
+      const source = graph.nodeMap.get(edge.source);
+      const target = graph.nodeMap.get(edge.target);
+      if (!source || !target) {
+        return { ...edge, hidden: true };
+      }
+      const sourceVisible = !hiddenTypes.has(source.type) && (!term || source.searchText.includes(term) || (selectedId && focus.focused.has(source.id)));
+      const targetVisible = !hiddenTypes.has(target.type) && (!term || target.searchText.includes(term) || (selectedId && focus.focused.has(target.id)));
+      const active = selectedId && (edge.source === selectedId || edge.target === selectedId);
+      const visible = sourceVisible && targetVisible;
+      return {
+        ...edge,
+        hidden: !visible,
+        animated: !!active,
+        label: showLabels ? edge.data.baseLabel : "",
+        style: {
+          ...edge.style,
+          stroke: active ? EDGE_ACTIVE : EDGE_COLOR,
+          strokeWidth: active ? 2.4 : 1.4,
+          opacity: selectedId ? (active ? 1 : 0.1) : 1,
+        },
+        labelStyle: {
+          ...edge.labelStyle,
+          fill: active ? "#ffffff" : "#c3caf0",
+        },
+      };
+    }));
+  }, [graph, search, hiddenTypes, selectedId, showLabels, focus, setNodes, setEdges]);
+
+  useEffect(() => {
+    if (!graph || !flowRef.current) return;
+    const t = window.setTimeout(() => {
+      flowRef.current?.fitView({ padding: 0.22, duration: 450, includeHiddenNodes: false });
+    }, 60);
+    return () => window.clearTimeout(t);
+  }, [graph?.signature]);
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search).get("graph");
+    if (!query) return;
+    loadGraphFromUrl(query);
+  }, []);
+
+  function openPicker() {
+    fileRef.current?.click();
+  }
+
+  function applyGraph(raw, sourceLabel = "graph") {
+    try {
+      const next = normalizeGraph(raw);
+      const initialLayout = buildLayout(next, showLabels);
+      setGraph(next);
+      setNodes(initialLayout.flowNodes);
+      setEdges(initialLayout.flowEdges);
+      setSearch("");
+      setHiddenTypes(new Set());
+      setSelectedId(null);
+      setHoverText("");
+      setLoaderHidden(true);
+      setError("");
+      document.title = `netmalper | ${next.meta.target || sourceLabel}`;
+    } catch (err) {
+      setError(`Invalid graph data: ${err.message}`);
+    }
+  }
+
+  function loadGraphFromUrl(raw) {
+    const url = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(raw) ? raw : (raw.startsWith("/") ? `file://${raw}` : raw);
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return res.json();
+      })
+      .then((json) => applyGraph(json, raw))
+      .catch((err) => setError(`Could not auto-load graph: ${err.message}`));
+  }
+
+  function loadFile(file) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        applyGraph(JSON.parse(ev.target.result), file.name);
+      } catch (err) {
+        setError(`Invalid JSON: ${err.message}`);
+      }
+    };
+    reader.onerror = () => setError(`Could not read ${file.name}`);
+    reader.readAsText(file);
+  }
+
+  function loadDemo() {
+    applyGraph(DEMO_GRAPH, "demo");
+  }
+
+  function toggleType(type) {
+    setHiddenTypes((current) => {
+      const next = new Set(current);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }
+
+  function resetView() {
+    setSearch("");
+    setHiddenTypes(new Set());
+    setSelectedId(null);
+    flowRef.current?.fitView({ padding: 0.22, duration: 350, includeHiddenNodes: false });
+  }
+
+  function zoomIn() {
+    flowRef.current?.zoomIn?.();
+  }
+
+  function zoomOut() {
+    flowRef.current?.zoomOut?.();
+  }
+
+  function fitView() {
+    flowRef.current?.fitView({ padding: 0.22, duration: 350, includeHiddenNodes: false });
+  }
+
+  const selectedNode = selectedId ? graph?.nodeMap.get(selectedId) : null;
+  const selectedConnections = focus.connections;
+  const visibleCounts = useMemo(() => {
+    const counts = {};
+    graph?.nodes.forEach((node) => {
+      counts[node.type] = (counts[node.type] || 0) + 1;
+    });
+    return counts;
+  }, [graph]);
+
+  const meta = graph?.meta || {};
+  const targetLabel = meta.target || "—";
+  const nodeTotal = meta.node_count ?? graph?.nodes.length ?? "—";
+  const edgeTotal = meta.edge_count ?? graph?.edges.length ?? "—";
+  const scanTime = formatTime(meta.timestamp);
+  const duration = formatDuration(meta.duration_s);
+
+  const focusSummary = selectedNode
+    ? `${selectedNode.label} • ${selectedNode.type}`
+    : hoverText || "drag to pan • scroll to zoom • click nodes for details";
+
+  return html`
+    <div className="app">
+      <div className="topbar">
+        <div className="brand">
+          <div className="brand-title">net<span className="accent">malper</span></div>
+          <div className="brand-subtitle">react flow intelligence map</div>
+        </div>
+
+        <div className="meta-strip">
+          <div className="meta-chip"><span className="dot"></span>target <strong>${targetLabel}</strong></div>
+          <div className="meta-chip">nodes <strong>${nodeTotal}</strong></div>
+          <div className="meta-chip">edges <strong>${edgeTotal}</strong></div>
+          <div className="meta-chip">scanned <strong>${scanTime}</strong></div>
+          <div className="meta-chip">duration <strong>${duration}</strong></div>
+          <div className="meta-chip">nmap <strong>${meta.nmap_used ? "enabled" : "off"}</strong></div>
+          <div className="meta-chip">naabu <strong>${meta.naabu_used ? "enabled" : "off"}</strong></div>
+          <div className="meta-chip">amass <strong>${meta.amass_used ? "enabled" : "off"}</strong></div>
+          <div className="meta-chip">root <strong>${meta.root_scan ? "yes" : "no"}</strong></div>
+        </div>
+
+        <div className="top-actions">
+          <input
+            className="search"
+            placeholder="filter nodes, labels, or raw data"
+            value=${search}
+            onInput=${(ev) => setSearch(ev.target.value)}
+          />
+          <button className="ghost-btn" onClick=${openPicker}>load JSON</button>
+          <input
+            className="file-input"
+            type="file"
+            accept=".json,application/json"
+            ref=${fileRef}
+            onChange=${(ev) => {
+              const file = ev.target.files && ev.target.files[0];
+              if (file) loadFile(file);
+              ev.target.value = "";
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="stage">
+        ${graph ? html`
+          <${ReactFlow}
+            nodes=${nodes}
+            edges=${edges}
+            onNodesChange=${onNodesChange}
+            onEdgesChange=${onEdgesChange}
+            onInit=${(instance) => { flowRef.current = instance; }}
+            nodeTypes=${{ entity: EntityNode }}
+            minZoom=${0.12}
+            maxZoom=${2.4}
+            fitView
+            fitViewOptions=${{ padding: 0.22 }}
+            panOnDrag
+            zoomOnScroll
+            zoomOnPinch
+            preventScrolling
+            nodesDraggable
+            nodesConnectable=${false}
+            elementsSelectable
+            onNodeClick=${(_, node) => setSelectedId(node.id)}
+            onPaneClick=${() => setSelectedId(null)}
+            onNodeMouseEnter=${(_, node) => setHoverText(`${node.data.nodeType}: ${node.data.label}`)}
+            onNodeMouseLeave=${() => setHoverText("")}
+            defaultEdgeOptions=${{ type: "smoothstep" }}
+          >
+            <${Background}
+              variant=${BackgroundVariant.Dots}
+              gap=${22}
+              size=${1}
+              color="rgba(127, 146, 204, 0.16)"
+              bgColor="transparent"
+            />
+            <${MiniMap}
+              position="bottom-left"
+              pannable
+              zoomable
+              bgColor="#0a0f1c"
+              nodeStrokeWidth=${2}
+              nodeColor=${(node) => (TYPE_CFG[node.data?.nodeType] || TYPE_CFG.default).color}
+              nodeStrokeColor=${(node) => (TYPE_CFG[node.data?.nodeType] || TYPE_CFG.default).color}
+              ariaLabel="NetMalper minimap"
+            />
+          </${ReactFlow}>
+        ` : null}
+      </div>
+
+      <div className=${`legend ${graph ? "" : "hidden"}`}>
+        <div className="panel-head">
+          <div>
+            <div className="panel-kicker">node types</div>
+            <div className="panel-title">Legend</div>
+          </div>
+          <button className="close-btn" onClick=${resetView} title="Reset filters">↺</button>
+        </div>
+        <div className="panel-body">
+          <div className="legend-list">
+            ${Object.entries(visibleCounts).sort((a, b) => a[0].localeCompare(b[0])).map(([type, count]) => {
+              const cfg = TYPE_CFG[type] || TYPE_CFG.default;
+              const hidden = hiddenTypes.has(type);
+              return html`
+                <button
+                  className=${`legend-item ${hidden ? "hidden" : ""}`}
+                  onClick=${() => toggleType(type)}
+                  key=${type}
+                >
+                  <span className="legend-swatch" style=${{ background: cfg.color, color: cfg.color }}></span>
+                  <span className="legend-name">${type}</span>
+                  <span className="legend-count">${count}</span>
+                </button>
+              `;
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className=${`details ${selectedNode ? "visible" : ""}`}>
+        <div className="panel-head">
+          <div>
+            <div className="panel-kicker">
+              ${selectedNode ? selectedNode.type : "details"}
+            </div>
+            <div className="panel-title">${selectedNode ? selectedNode.label : "No selection"}</div>
+          </div>
+          <button className="close-btn" onClick=${() => setSelectedId(null)} title="Close">×</button>
+        </div>
+        <div className="panel-body details-scroll">
+          ${selectedNode ? html`
+            <div className="detail-section">
+              <div className="node-blurb" style=${{ borderColor: `color-mix(in srgb, ${(TYPE_CFG[selectedNode.type] || TYPE_CFG.default).color} 24%, rgba(145, 160, 220, 0.12))` }}>
+                ${selectedNode.summary || "Selected node"}
+              </div>
+              ${selectedNode.type === "os_guess" && selectedNode.data?.accuracy ? html`
+                <div className="node-blurb" style=${{ color: "#f2a76b", borderColor: "rgba(255, 157, 103, 0.2)" }}>
+                  ${selectedNode.data.accuracy}% confidence
+                </div>
+              ` : null}
+              ${selectedNode.type === "port" && selectedNode.data?.version_str ? html`
+                <div className="node-blurb" style=${{ color: "#92f0b9", borderColor: "rgba(110, 231, 183, 0.22)" }}>
+                  ${selectedNode.data.version_str}
+                </div>
+              ` : null}
+              ${selectedNode.type === "nse_finding" && selectedNode.data?.output ? html`
+                <div className="code-box">${selectedNode.data.output}</div>
+              ` : null}
+            </div>
+
+            <div className="detail-section">
+              <div className="panel-kicker">details</div>
+              <div className="detail-grid">
+                ${buildDetailRows(selectedNode.data || {})}
+              </div>
+            </div>
+
+            <div className="detail-section">
+              <div className="panel-kicker">connections (${selectedConnections.length})</div>
+              <div className="connections">
+                ${selectedConnections.length ? selectedConnections.map(({ id, node, via, direction }) => {
+                  const cfg = TYPE_CFG[node.type] || TYPE_CFG.default;
+                  return html`
+                    <button className="connection" key=${id} onClick=${() => setSelectedId(node.id)}>
+                      <span className="connection-dot" style=${{ background: cfg.color }}></span>
+                      <span className="connection-body">
+                        <span className="connection-title">${node.label}</span>
+                        <span className="connection-meta">${direction} ${via}</span>
+                      </span>
+                    </button>
+                  `;
+                }) : html`<div className="node-blurb">No direct connections.</div>`}
+              </div>
+            </div>
+
+            ${selectedNode && hiddenTypes.has(selectedNode.type) ? html`
+              <div className="detail-section">
+                <div className="node-blurb" style=${{ color: "#f6c177", borderColor: "rgba(246, 193, 119, 0.22)" }}>
+                  This node is currently hidden by an active filter.
+                </div>
+              </div>
+            ` : null}
+          ` : html`
+            <div className="node-blurb">Pick a node to inspect its metadata, outbound edges, and scan output.</div>
+          `}
+        </div>
+      </div>
+
+      <div className="toolbar">
+        <button className="tool-btn" onClick=${zoomIn} title="Zoom in">+</button>
+        <button className="tool-btn" onClick=${zoomOut} title="Zoom out">−</button>
+        <button className="tool-btn" onClick=${fitView} title="Fit to view">⤢</button>
+        <button className=${`tool-btn ${showLabels ? "active" : ""}`} onClick=${() => setShowLabels((v) => !v)} title="Toggle labels">𝕃</button>
+        <button className="tool-btn" onClick=${resetView} title="Reset filters">↺</button>
+      </div>
+
+      <div className="statusbar">
+        <div className="status"><strong>${focusSummary}</strong></div>
+        <div className="status">search: <strong>${search || "none"}</strong></div>
+      </div>
+
+      <div className=${`loader ${loaderHidden ? "hidden" : ""}`}>
+        <div className="loader-card">
+          <h1 className="loader-title">net<span className="accent">malper</span></h1>
+          <div className="loader-copy">
+            Drop a NetMalper <code>_graph.json</code> file, load a local scan, or use the demo data to explore the React Flow viewer.
+          </div>
+          <div className="loader-actions">
+            <div
+              className="dropzone"
+              onClick=${openPicker}
+              onDragOver=${(ev) => { ev.preventDefault(); ev.currentTarget.classList.add("dragging"); }}
+              onDragLeave=${(ev) => ev.currentTarget.classList.remove("dragging")}
+              onDrop=${(ev) => {
+                ev.preventDefault();
+                ev.currentTarget.classList.remove("dragging");
+                const file = ev.dataTransfer.files && ev.dataTransfer.files[0];
+                if (file) loadFile(file);
+              }}
+            >
+              <div className="dropzone-icon">⬡</div>
+              <div className="dropzone-main">Drop graph.json here</div>
+              <div className="dropzone-sub">or click to browse</div>
+            </div>
+            <button className="ghost-btn" onClick=${loadDemo}>Load demo scan</button>
+          </div>
+          ${error ? html`<div className="error">${error}</div>` : null}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+const DEMO_GRAPH = {
+  meta: {
+    target: "example.com",
+    timestamp: new Date().toISOString(),
+    duration_s: 12.3,
+    version: "2.0.0",
+    nmap_used: true,
+    naabu_used: true,
+    amass_used: true,
+    root_scan: true,
+    node_count: 0,
+    edge_count: 0,
+  },
+  nodes: [
+    { id: "root:example.com", label: "example.com", type: "root", data: { fqdn: "example.com" } },
+    { id: "sub:www.example.com", label: "www.example.com", type: "subdomain", data: { fqdn: "www.example.com", ips: ["93.184.216.34"] } },
+    { id: "sub:api.example.com", label: "api.example.com", type: "subdomain", data: { fqdn: "api.example.com", ips: ["93.184.216.35"] } },
+    { id: "sub:dev.example.com", label: "dev.example.com", type: "subdomain", data: { fqdn: "dev.example.com", ips: ["10.0.0.5"] } },
+    { id: "sub:admin.example.com", label: "admin.example.com", type: "subdomain", data: { fqdn: "admin.example.com", ips: ["93.184.216.40"] } },
+    { id: "ip:93.184.216.34", label: "93.184.216.34", type: "ip", data: { ip: "93.184.216.34", reverse_dns: "example.com", is_private: false } },
+    { id: "ip:93.184.216.35", label: "93.184.216.35", type: "ip", data: { ip: "93.184.216.35", reverse_dns: "api.example.com", is_private: false } },
+    { id: "ip:10.0.0.5", label: "10.0.0.5", type: "ip", data: { ip: "10.0.0.5", is_private: true } },
+    { id: "cname:example.cdn.net", label: "example.cdn.net", type: "cname", data: { fqdn: "example.cdn.net" } },
+    { id: "port:93.184.216.34:80", label: ":80", type: "port", data: { port: 80, service: "HTTP", host: "93.184.216.34" } },
+    { id: "port:93.184.216.34:443", label: ":443", type: "port", data: { port: 443, service: "HTTPS", host: "93.184.216.34" } },
+    { id: "port:93.184.216.35:443", label: ":443", type: "port", data: { port: 443, service: "HTTPS", host: "93.184.216.35" } },
+    { id: "port:10.0.0.5:5432", label: ":5432", type: "port", data: { port: 5432, service: "PostgreSQL", host: "10.0.0.5" } },
+    { id: "endpoint:https://example.com/healthz", label: "/healthz", type: "endpoint", data: { url: "https://example.com/healthz", status: 200, server: "nginx/1.24", content_type: "text/plain", interesting: true } },
+    { id: "endpoint:https://api.example.com/v1", label: "/v1", type: "endpoint", data: { url: "https://api.example.com/v1", status: 401, server: "cloudflare", interesting: false } },
+    { id: "endpoint:https://admin.example.com/", label: "/", type: "endpoint", data: { url: "https://admin.example.com/", status: 403, server: "nginx", interesting: false } },
+    { id: "endpoint:https://dev.example.com/.env", label: "/.env", type: "endpoint", data: { url: "https://dev.example.com/.env", status: 200, server: "python/3.11", interesting: true } },
+    { id: "os:93.184.216.34:Linux", label: "Linux 5.x", type: "os_guess", data: { os_name: "Linux 5.4 - 5.11", accuracy: "94", host: "93.184.216.34" } },
+    { id: "nse:93.184.216.34:443:ssl-cert", label: "ssl-cert", type: "nse_finding", data: { script_id: "ssl-cert", output: "Subject: commonName=example.com\nIssuer: DigiCert\nNot valid before: 2024-01-01\nNot valid after: 2025-01-01", port: 443, host: "93.184.216.34" } },
+    { id: "nse:10.0.0.5:5432:pgsql-info", label: "pgsql-info", type: "nse_finding", data: { script_id: "pgsql-brute", output: "Password authentication required\nprotocol version: 3.0", port: 5432, host: "10.0.0.5" } },
+  ],
+  edges: [
+    { source: "root:example.com", target: "sub:www.example.com", label: "subdomain" },
+    { source: "root:example.com", target: "sub:api.example.com", label: "subdomain" },
+    { source: "root:example.com", target: "sub:dev.example.com", label: "subdomain" },
+    { source: "root:example.com", target: "sub:admin.example.com", label: "subdomain" },
+    { source: "sub:www.example.com", target: "cname:example.cdn.net", label: "CNAME" },
+    { source: "sub:www.example.com", target: "ip:93.184.216.34", label: "A" },
+    { source: "sub:api.example.com", target: "ip:93.184.216.35", label: "A" },
+    { source: "sub:dev.example.com", target: "ip:10.0.0.5", label: "A" },
+    { source: "ip:93.184.216.34", target: "port:93.184.216.34:80", label: "port/HTTP" },
+    { source: "ip:93.184.216.34", target: "port:93.184.216.34:443", label: "port/HTTPS" },
+    { source: "ip:93.184.216.35", target: "port:93.184.216.35:443", label: "port/HTTPS" },
+    { source: "ip:10.0.0.5", target: "port:10.0.0.5:5432", label: "port/PostgreSQL" },
+    { source: "sub:www.example.com", target: "endpoint:https://example.com/healthz", label: "200" },
+    { source: "sub:api.example.com", target: "endpoint:https://api.example.com/v1", label: "401" },
+    { source: "sub:admin.example.com", target: "endpoint:https://admin.example.com/", label: "403" },
+    { source: "sub:dev.example.com", target: "endpoint:https://dev.example.com/.env", label: "200" },
+    { source: "ip:93.184.216.34", target: "os:93.184.216.34:Linux", label: "OS 94%" },
+    { source: "port:93.184.216.34:443", target: "nse:93.184.216.34:443:ssl-cert", label: "NSE" },
+    { source: "port:10.0.0.5:5432", target: "nse:10.0.0.5:5432:pgsql-info", label: "NSE" },
+  ],
+};
+
+DEMO_GRAPH.meta.node_count = DEMO_GRAPH.nodes.length;
+DEMO_GRAPH.meta.edge_count = DEMO_GRAPH.edges.length;
+
+createRoot(document.getElementById("root")).render(html`<${App} />`);
+</script>
+</body>
+</html>
