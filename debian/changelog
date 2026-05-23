@@ -1,3 +1,19 @@
+netmalper (7.2.0-1) noble; urgency=medium
+
+  * Bumped the release to v7.2.0.
+  * Restored RustScan's Nmap handoff for service/version analysis.
+  * Kept socket/full-Nmap fallback scans gated until all RustScan retries fail.
+
+ -- Mithun Krish <mitchastertheblaster@gmail.com>  Sat, 23 May 2026 16:32:00 +0000
+
+netmalper (6.2.0-1) noble; urgency=medium
+
+  * Bumped the release to v6.2.0.
+  * Fixed RustScan timeout handling so partial output survives TimeoutExpired.
+  * Normalized subprocess output decoding to avoid bytes/str crashes.
+
+ -- Mithun Krish <mitchastertheblaster@gmail.com>  Sat, 23 May 2026 15:44:50 +0000
+
 netmalper (3.0.0-1) noble; urgency=medium
 
   * Initial release of NetMalper.

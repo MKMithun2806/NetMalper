@@ -1,7 +1,7 @@
 ## <p align="left"><img src="debian/logo.svg" alt="NETMALPER" height="500"></p>
 ![License](https://img.shields.io/badge/license-MIT-red.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20MacOS-black.svg)
-![Status](https://img.shields.io/badge/version-3.0.0--stable-orange)
+![Status](https://img.shields.io/badge/version-7.2.0--stable-orange)
 
 **Automated Reconnaissance & 3D Intelligence Mapping**
 
@@ -9,7 +9,8 @@
 
 # Features
 - **Hybrid Subdomain Discovery**: Merges Amass passive OSINT with high-speed DNS brute-forcing.
-- **Advanced Port Scanning**: Native RustScan integration for ultra-fast discovery with Nmap service/version fingerprinting fallback.
+- **Advanced Port Scanning**: RustScan-first discovery with Nmap handoff, plus socket/full-Nmap fallback only after RustScan exhausts all retries.
+- **RustScan-Gated Fallbacks**: Socket and Nmap scans stay idle until RustScan returns no usable ports across all retries.
 - **Visual Intelligence**: Generates interactive, force-directed graph maps for complex network visualization.
 - **Resilient**: Automatic `ulimit` (NOFILE) handling and intelligent backoff for high-concurrency scans.
 
@@ -37,8 +38,10 @@ or use `--open-viewer`.
 | `--no-wordlist` | Skip built-in + custom wordlist brute-force. |
 | `--no-rustscan` | Skip RustScan and use the socket scanner only. |
 | `--rustscan-batch-size N` | RustScan batch size. Default: `4500`. |
-| `--rustscan-timeout MS` | RustScan timeout in milliseconds. Default: `1500`. |
+| `--rustscan-timeout MS` | RustScan internal timeout in milliseconds. Default: `1500`. |
+| `--rustscan-process-timeout SEC` | Total RustScan process budget across retries. Default: `1800`, max `1800`. |
 | `--rustscan-retries N` | RustScan retry attempts on failure. Default: `3`. |
+| `--rustscan-greppable` | Parse RustScan's greppable output instead of Nmap XML. |
 | `--no-socket` | Skip the parallel socket scanner fallback. |
 | `--no-http` | Skip HTTP endpoint probing. |
 | `--no-ports` | Skip all port scanning. |
