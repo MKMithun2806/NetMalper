@@ -17,7 +17,8 @@ Maintained by: MKMithun2806 | Red Team Aspirant & Security Researcher
 
 # Visualization
 - NetMalper generates a structured intelligence map instead of a wall of text.
-- Run a scan with `--out scan.json`, then open [NetMalper Viewer](https://mkmithun2806.github.io/NetMalper/netmalper_vizualizer.html) or the legacy [NetMalper Vizualizer](http://threejs-rubiks-cube-mitch.s3-website.ap-south-2.amazonaws.com/) or use `--open-viewer`.
+- Run a scan with `--out scan.json`, then open [NetMalper Viewer](https://mkmithun2806.github.io/NetMalper/netmalper_vizualizer.html) or the legacy [NetMalper Vizualizer](http://threejs-rubiks-cube-mitch.s3-website.ap-south-2.amazonaws.com/) 
+or use `--open-viewer`.
 - The visualizer uses React Flow for pan/zoom, filtering, connected-node focus, and scan metadata panels.
 
 ---
