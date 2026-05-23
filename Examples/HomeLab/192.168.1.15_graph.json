@@ -1,0 +1,989 @@
+{
+  "meta": {
+    "target": "192.168.1.15",
+    "timestamp": "2026-05-23T17:06:30.711370+00:00",
+    "duration_s": 571.44,
+    "version": "7.2.0",
+    "rustscan_used": true,
+    "rustscan_retries": 3,
+    "rustscan_batch_size": 4500,
+    "rustscan_min_batch_size": 128,
+    "rustscan_nofile_soft": 8192,
+    "rustscan_timeout_ms": 1500,
+    "amass_used": true,
+    "root_scan": true,
+    "node_count": 54,
+    "edge_count": 53
+  },
+  "nodes": [
+    {
+      "id": "root:192.168.1.15",
+      "label": "192.168.1.15",
+      "type": "root",
+      "data": {
+        "fqdn": "192.168.1.15"
+      }
+    },
+    {
+      "id": "ip:192.168.1.15",
+      "label": "192.168.1.15",
+      "type": "ip",
+      "data": {
+        "ip": "192.168.1.15",
+        "reverse_dns": "192.168.1.15",
+        "is_private": true
+      }
+    },
+    {
+      "id": "port:192.168.1.15:22",
+      "label": ":22",
+      "type": "port",
+      "data": {
+        "port": 22,
+        "service": "ssh",
+        "product": "OpenSSH",
+        "version": "9.6p1 Ubuntu 3ubuntu13.16",
+        "version_str": "OpenSSH 9.6p1 Ubuntu 3ubuntu13.16 Ubuntu Linux; protocol 2.0",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:openbsd:openssh:9.6p1",
+          "cpe:/o:linux:linux_kernel"
+        ],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:53",
+      "label": ":53",
+      "type": "port",
+      "data": {
+        "port": 53,
+        "service": "domain",
+        "product": "dnsmasq",
+        "version": "pi-hole-v2.92rc1",
+        "version_str": "dnsmasq pi-hole-v2.92rc1",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:thekelleys:dnsmasq:pi-hole-v2.92rc1"
+        ],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:53:dns-nsid",
+      "label": "dns-nsid",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "dns-nsid",
+        "output": "bind.version: dnsmasq-pi-hole-v2.92rc1\nbind.version: dnsmasq-pi-hole-v2.92rc1",
+        "port": 53,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:80",
+      "label": ":80",
+      "type": "port",
+      "data": {
+        "port": 80,
+        "service": "http",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:80:http-title",
+      "label": "http-title",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-title",
+        "output": "MKS INFRA\ntitle: MKS INFRA",
+        "port": 80,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:80:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "FourOhFourRequest: \n    HTTP/1.1 404 Not Found\n    Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate\n    X-Powered-By: Next.js\n    ETag: \"dc2g57rkcj21e\"\n    Content-Type: text/html; charset=utf-8\n    Content-Length: 2642\n    Vary: Accept-Encoding\n    Date: Sat, 23 May 2026 17:04:40 GMT\n    Connection: close\n    <!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\" data-ne",
+        "port": 80,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:80:http-favicon",
+      "label": "http-favicon",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-favicon",
+        "output": "Unknown favicon MD5: B33F96911BB32137D92B5B6AF6D5332A",
+        "port": 80,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:80:http-methods",
+      "label": "http-methods",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-methods",
+        "output": "Supported Methods: GET HEAD",
+        "port": 80,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:139",
+      "label": ":139",
+      "type": "port",
+      "data": {
+        "port": 139,
+        "service": "netbios-ssn",
+        "product": "Samba smbd",
+        "version": "4.6.2",
+        "version_str": "Samba smbd 4.6.2",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:samba:samba:4.6.2"
+        ],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:445",
+      "label": ":445",
+      "type": "port",
+      "data": {
+        "port": 445,
+        "service": "netbios-ssn",
+        "product": "Samba smbd",
+        "version": "4.6.2",
+        "version_str": "Samba smbd 4.6.2",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:samba:samba:4.6.2"
+        ],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:3001",
+      "label": ":3001",
+      "type": "port",
+      "data": {
+        "port": 3001,
+        "service": "nessus",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:3001:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "GenericLines, Help, Kerberos, RTSPRequest, SIPOptions, SSLSessionReq, TLSSessionReq: \n    HTTP/1.1 400 Bad Request\n    Content-Type: text/plain; charset=utf-8\n    Connection: close\n    Request\n  GetRequest: \n    HTTP/1.0 302 Found\n    Cache-Control: no-store\n    Content-Type: text/html; charset=utf-8\n    Location: /login\n    X-Content-Type-Options: nosniff\n    X-Xss-Protection: 1; mode=block\n    D",
+        "port": 3001,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:4533",
+      "label": ":4533",
+      "type": "port",
+      "data": {
+        "port": 4533,
+        "service": "unknown",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:4533:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "DNSVersionBindReqTCP, GenericLines, Help, Kerberos, RPCCheck, RTSPRequest, SSLSessionReq, TLSSessionReq, rotctl: \n    HTTP/1.1 400 Bad Request\n    Content-Type: text/plain; charset=utf-8\n    Connection: close\n    Request\n  GetRequest: \n    HTTP/1.0 302 Found\n    Content-Type: text/html; charset=utf-8\n    Location: /app/\n    Permissions-Policy: autoplay=(), camera=(), microphone=(), usb=()\n    Refe",
+        "port": 4533,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:5678",
+      "label": ":5678",
+      "type": "port",
+      "data": {
+        "port": 5678,
+        "service": "rrac",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:5678:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "GetRequest: \n    HTTP/1.1 200 OK\n    Accept-Ranges: bytes\n    Cache-Control: public, max-age=86400\n    Last-Modified: Sat, 23 May 2026 12:03:11 GMT\n    ETag: W/\"3bc3-19e54b7caa0\"\n    Content-Type: text/html; charset=utf-8\n    Content-Length: 15299\n    Vary: Accept-Encoding\n    Date: Sat, 23 May 2026 17:04:45 GMT\n    Connection: close\n    <!DOCTYPE html>\n    <html lang=\"en\">\n    <head>\n    <meta ch",
+        "port": 5678,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:6767",
+      "label": ":6767",
+      "type": "port",
+      "data": {
+        "port": 6767,
+        "service": "http",
+        "product": "nginx",
+        "version": "1.29.5",
+        "version_str": "nginx 1.29.5",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:igor_sysoev:nginx:1.29.5"
+        ],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:6767:http-methods",
+      "label": "http-methods",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-methods",
+        "output": "Supported Methods: GET HEAD POST OPTIONS",
+        "port": 6767,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:6767:tls-alpn",
+      "label": "tls-alpn",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "tls-alpn",
+        "output": "http/1.1\n  http/1.0\n  http/0.9",
+        "port": 6767,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:6767:ssl-cert",
+      "label": "ssl-cert",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "ssl-cert",
+        "output": "Subject: commonName=192.168.1.15\nIssuer: commonName=192.168.1.15\nPublic Key type: rsa\nPublic Key bits: 2048\nSignature Algorithm: sha256WithRSAEncryption\nNot valid before: 2026-03-22T20:22:43\nNot valid after:  2027-03-22T20:22:43\nMD5:   bf6faba85c0456f5191c0ff21d2fd276\nSHA-1: 3f8d64a15e73c8f4ff45b70ac31363961c4f8a77\n-----BEGIN CERTIFICATE-----\nMIIDDzCCAfegAwIBAgIUMfFKKWKvWlb/nxI1xWz5D8L9lawwDQYJKoZ",
+        "port": 6767,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:6767:http-title",
+      "label": "http-title",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-title",
+        "output": "SilverBullet\ntitle: SilverBullet",
+        "port": 6767,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:6881",
+      "label": ":6881",
+      "type": "port",
+      "data": {
+        "port": 6881,
+        "service": "tcpwrapped",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:8080",
+      "label": ":8080",
+      "type": "port",
+      "data": {
+        "port": 8080,
+        "service": "http-proxy",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8080:http-methods",
+      "label": "http-methods",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-methods",
+        "output": "Supported Methods: GET HEAD POST",
+        "port": 8080,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8080:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "FourOhFourRequest: \n    HTTP/1.1 404 Not Found\n    connection: keep-alive\n    content-length: 9\n    content-security-policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; object-src 'none'; form-action 'self'; frame-src 'self' blob:; frame-ancestors 'self';\n    content-type: text/plain; charset=UTF-8\n    cross-origin-opener-policy: s",
+        "port": 8080,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8080:http-title",
+      "label": "http-title",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-title",
+        "output": "qBittorrent WebUI\ntitle: qBittorrent WebUI",
+        "port": 8080,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:8081",
+      "label": ":8081",
+      "type": "port",
+      "data": {
+        "port": 8081,
+        "service": "http",
+        "product": "nginx",
+        "version": "1.26.2",
+        "version_str": "nginx 1.26.2",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:igor_sysoev:nginx:1.26.2"
+        ],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8081:http-title",
+      "label": "http-title",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-title",
+        "output": "IT Tools - Handy online tools for developers\ntitle: IT Tools - Handy online tools for developers",
+        "port": 8081,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8081:http-favicon",
+      "label": "http-favicon",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-favicon",
+        "output": "Unknown favicon MD5: DC36588F49BBF741CE3FD2FC7651C6FF",
+        "port": 8081,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8081:http-methods",
+      "label": "http-methods",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-methods",
+        "output": "Supported Methods: GET HEAD",
+        "port": 8081,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:8083",
+      "label": ":8083",
+      "type": "port",
+      "data": {
+        "port": 8083,
+        "service": "webdav",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8083:http-cors",
+      "label": "http-cors",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-cors",
+        "output": "HEAD GET POST PUT DELETE TRACE OPTIONS CONNECT PATCH",
+        "port": 8083,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8083:http-methods",
+      "label": "http-methods",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-methods",
+        "output": "Supported Methods: GET POST PUT DELETE HEAD OPTIONS CONNECT PATCH PROPFIND MKCOL LOCK UNLOCK PROPPATCH COPY MOVE REPORT\n  Potentially risky methods: PUT DELETE CONNECT PATCH PROPFIND MKCOL LOCK UNLOCK PROPPATCH COPY MOVE REPORT",
+        "port": 8083,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8083:http-webdav-scan",
+      "label": "http-webdav-scan",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-webdav-scan",
+        "output": "WebDAV type: Unknown\n  Server Date: Sat, 23 May 2026 17:05:42 GMT\n  Allowed Methods: GET, POST, PUT, DELETE, HEAD, OPTIONS, CONNECT, PATCH, PROPFIND, MKCOL, LOCK, UNLOCK, PROPPATCH, COPY, MOVE, REPORT\nWebDAV type: Unknown\nServer Date: Sat, 23 May 2026 17:05:42 GMT\nAllowed Methods: GET, POST, PUT, DELETE, HEAD, OPTIONS, CONNECT, PATCH, PROPFIND, MKCOL, LOCK, UNLOCK, PROPPATCH, COPY, MOVE, REPORT",
+        "port": 8083,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8083:http-title",
+      "label": "http-title",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-title",
+        "output": "Pi-hole adb088d9e47f\ntitle: Pi-hole adb088d9e47f",
+        "port": 8083,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:8096",
+      "label": ":8096",
+      "type": "port",
+      "data": {
+        "port": 8096,
+        "service": "unknown",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8096:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "DNSVersionBindReqTCP, Help, Kerberos, RPCCheck, SMBProgNeg, SSLSessionReq, TLSSessionReq, X11Probe: \n    HTTP/1.1 400 Bad Request\n    Content-Length: 0\n    Connection: close\n    Date: Sat, 23 May 2026 17:04:45 GMT\n    Server: Kestrel\n  GetRequest, HTTPOptions: \n    HTTP/1.1 500 Internal Server Error\n    Content-Length: 0\n    Connection: close\n    Date: Sat, 23 May 2026 17:04:45 GMT\n    Server: Kes",
+        "port": 8096,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:8443",
+      "label": ":8443",
+      "type": "port",
+      "data": {
+        "port": 8443,
+        "service": "https-alt",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8443:http-methods",
+      "label": "http-methods",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-methods",
+        "output": "Supported Methods: GET HEAD POST OPTIONS",
+        "port": 8443,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8443:http-title",
+      "label": "http-title",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-title",
+        "output": "code-server login\nRequested resource was ./login\ntitle: code-server login\nredirect_url: ./login",
+        "port": 8443,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8443:http-robots.txt",
+      "label": "http-robots.txt",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-robots.txt",
+        "output": "1 disallowed entry \n/",
+        "port": 8443,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:8443:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "DNSVersionBindReqTCP, Help, Kerberos, RPCCheck, SIPOptions, SMBProgNeg, SSLSessionReq, SSLv23SessionReq, TLSSessionReq, X11Probe: \n    HTTP/1.1 400 Bad Request\n    Connection: close\n  GetRequest: \n    HTTP/1.1 302 Found\n    Location: ./login\n    Vary: Accept, Accept-Encoding\n    Content-Type: text/plain; charset=utf-8\n    Content-Length: 29\n    Date: Sat, 23 May 2026 17:04:47 GMT\n    Connection: c",
+        "port": 8443,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:9000",
+      "label": ":9000",
+      "type": "port",
+      "data": {
+        "port": 9000,
+        "service": "cslistener",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:9000:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "GenericLines: \n    HTTP/1.1 400 Bad Request\n    Content-Type: text/plain; charset=utf-8\n    Connection: close\n    Request\n  GetRequest, HTTPOptions: \n    HTTP/1.0 200 OK\n    Accept-Ranges: bytes\n    Cache-Control: max-age=31536000\n    Content-Length: 22734\n    Content-Security-Policy: script-src 'self' cdn.matomo.cloud js.hsforms.net https://www.google.com/recaptcha/, https://www.gstatic.com/recap",
+        "port": 9000,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:9090",
+      "label": ":9090",
+      "type": "port",
+      "data": {
+        "port": 9090,
+        "service": "zeus-admin",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:9090:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "GenericLines, Help, Kerberos, RTSPRequest, SIPOptions, SSLSessionReq, SqueezeCenter_CLI, TLSSessionReq: \n    HTTP/1.1 400 Bad Request\n    Content-Type: text/plain; charset=utf-8\n    Connection: close\n    Request\n  GetRequest: \n    HTTP/1.0 302 Found\n    Content-Type: text/html; charset=utf-8\n    Location: /query\n    Date: Sat, 23 May 2026 17:04:40 GMT\n    Content-Length: 29\n    href=\"/query\">Found",
+        "port": 9090,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:9100",
+      "label": ":9100",
+      "type": "port",
+      "data": {
+        "port": 9100,
+        "service": "jetdirect",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "port:192.168.1.15:9443",
+      "label": ":9443",
+      "type": "port",
+      "data": {
+        "port": 9443,
+        "service": "tungsten-https",
+        "product": "",
+        "version": "",
+        "version_str": "",
+        "protocol": "tcp",
+        "cpe": [],
+        "host": "192.168.1.15",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:9443:ssl-cert",
+      "label": "ssl-cert",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "ssl-cert",
+        "output": "Subject: \nSubject Alternative Name: DNS:localhost, IP Address:0.0.0.0\nIssuer: \nPublic Key type: ec\nPublic Key bits: 256\nSignature Algorithm: ecdsa-with-SHA256\nNot valid before: 2026-02-17T15:21:58\nNot valid after:  2031-02-17T15:21:58\nMD5:   6ceb3b12dadcea1a9f6c08205c0a5d62\nSHA-1: e0f3b75c512d2865beac83c09ad1b1a0db6f4c31\n-----BEGIN CERTIFICATE-----\nMIIBUjCB+KADAgECAhBnri/dDO5i4GlSWRSqC7/LMAoGCCqGS",
+        "port": 9443,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "nse:192.168.1.15:9443:fingerprint-strings",
+      "label": "fingerprint-strings",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "fingerprint-strings",
+        "output": "GenericLines: \n    HTTP/1.1 400 Bad Request\n    Content-Type: text/plain; charset=utf-8\n    Connection: close\n    Request\n  GetRequest, HTTPOptions: \n    HTTP/1.0 200 OK\n    Accept-Ranges: bytes\n    Cache-Control: max-age=31536000\n    Content-Length: 22734\n    Content-Security-Policy: script-src 'self' cdn.matomo.cloud js.hsforms.net https://www.google.com/recaptcha/, https://www.gstatic.com/recap",
+        "port": 9443,
+        "host": "192.168.1.15"
+      }
+    },
+    {
+      "id": "endpoint:http://192.168.1.15/",
+      "label": "/",
+      "type": "endpoint",
+      "data": {
+        "url": "http://192.168.1.15/",
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "server": "",
+        "content_length": "41471",
+        "interesting": true
+      }
+    },
+    {
+      "id": "endpoint:http://192.168.1.15/robots.txt",
+      "label": "/robots.txt",
+      "type": "endpoint",
+      "data": {
+        "url": "http://192.168.1.15/robots.txt",
+        "status": 200,
+        "content_type": "text/plain",
+        "server": "",
+        "content_length": "?",
+        "interesting": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "root:192.168.1.15",
+      "target": "ip:192.168.1.15",
+      "label": "A"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:22",
+      "label": "port/ssh"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:53",
+      "label": "port/domain"
+    },
+    {
+      "source": "port:192.168.1.15:53",
+      "target": "nse:192.168.1.15:53:dns-nsid",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:80",
+      "label": "port/http"
+    },
+    {
+      "source": "port:192.168.1.15:80",
+      "target": "nse:192.168.1.15:80:http-title",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:80",
+      "target": "nse:192.168.1.15:80:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:80",
+      "target": "nse:192.168.1.15:80:http-favicon",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:80",
+      "target": "nse:192.168.1.15:80:http-methods",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:139",
+      "label": "port/netbios-ssn"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:445",
+      "label": "port/netbios-ssn"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:3001",
+      "label": "port/nessus"
+    },
+    {
+      "source": "port:192.168.1.15:3001",
+      "target": "nse:192.168.1.15:3001:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:4533",
+      "label": "port/unknown"
+    },
+    {
+      "source": "port:192.168.1.15:4533",
+      "target": "nse:192.168.1.15:4533:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:5678",
+      "label": "port/rrac"
+    },
+    {
+      "source": "port:192.168.1.15:5678",
+      "target": "nse:192.168.1.15:5678:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:6767",
+      "label": "port/http"
+    },
+    {
+      "source": "port:192.168.1.15:6767",
+      "target": "nse:192.168.1.15:6767:http-methods",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:6767",
+      "target": "nse:192.168.1.15:6767:tls-alpn",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:6767",
+      "target": "nse:192.168.1.15:6767:ssl-cert",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:6767",
+      "target": "nse:192.168.1.15:6767:http-title",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:6881",
+      "label": "port/tcpwrapped"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:8080",
+      "label": "port/http-proxy"
+    },
+    {
+      "source": "port:192.168.1.15:8080",
+      "target": "nse:192.168.1.15:8080:http-methods",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8080",
+      "target": "nse:192.168.1.15:8080:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8080",
+      "target": "nse:192.168.1.15:8080:http-title",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:8081",
+      "label": "port/http"
+    },
+    {
+      "source": "port:192.168.1.15:8081",
+      "target": "nse:192.168.1.15:8081:http-title",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8081",
+      "target": "nse:192.168.1.15:8081:http-favicon",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8081",
+      "target": "nse:192.168.1.15:8081:http-methods",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:8083",
+      "label": "port/webdav"
+    },
+    {
+      "source": "port:192.168.1.15:8083",
+      "target": "nse:192.168.1.15:8083:http-cors",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8083",
+      "target": "nse:192.168.1.15:8083:http-methods",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8083",
+      "target": "nse:192.168.1.15:8083:http-webdav-scan",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8083",
+      "target": "nse:192.168.1.15:8083:http-title",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:8096",
+      "label": "port/unknown"
+    },
+    {
+      "source": "port:192.168.1.15:8096",
+      "target": "nse:192.168.1.15:8096:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:8443",
+      "label": "port/https-alt"
+    },
+    {
+      "source": "port:192.168.1.15:8443",
+      "target": "nse:192.168.1.15:8443:http-methods",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8443",
+      "target": "nse:192.168.1.15:8443:http-title",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8443",
+      "target": "nse:192.168.1.15:8443:http-robots.txt",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:8443",
+      "target": "nse:192.168.1.15:8443:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:9000",
+      "label": "port/cslistener"
+    },
+    {
+      "source": "port:192.168.1.15:9000",
+      "target": "nse:192.168.1.15:9000:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:9090",
+      "label": "port/zeus-admin"
+    },
+    {
+      "source": "port:192.168.1.15:9090",
+      "target": "nse:192.168.1.15:9090:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:9100",
+      "label": "port/jetdirect"
+    },
+    {
+      "source": "ip:192.168.1.15",
+      "target": "port:192.168.1.15:9443",
+      "label": "port/tungsten-https"
+    },
+    {
+      "source": "port:192.168.1.15:9443",
+      "target": "nse:192.168.1.15:9443:ssl-cert",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.15:9443",
+      "target": "nse:192.168.1.15:9443:fingerprint-strings",
+      "label": "NSE"
+    },
+    {
+      "source": "root:192.168.1.15",
+      "target": "endpoint:http://192.168.1.15/",
+      "label": "200"
+    },
+    {
+      "source": "root:192.168.1.15",
+      "target": "endpoint:http://192.168.1.15/robots.txt",
+      "label": "200"
+    }
+  ]
+}

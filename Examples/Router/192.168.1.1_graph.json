@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "target": "192.168.1.1",
+    "timestamp": "2026-05-23T16:54:30.638138+00:00",
+    "duration_s": 112.35,
+    "version": "7.2.0",
+    "rustscan_used": true,
+    "rustscan_retries": 3,
+    "rustscan_batch_size": 4500,
+    "rustscan_min_batch_size": 128,
+    "rustscan_nofile_soft": 8192,
+    "rustscan_timeout_ms": 1500,
+    "amass_used": true,
+    "root_scan": true,
+    "node_count": 13,
+    "edge_count": 12
+  },
+  "nodes": [
+    {
+      "id": "root:192.168.1.1",
+      "label": "192.168.1.1",
+      "type": "root",
+      "data": {
+        "fqdn": "192.168.1.1"
+      }
+    },
+    {
+      "id": "ip:192.168.1.1",
+      "label": "192.168.1.1",
+      "type": "ip",
+      "data": {
+        "ip": "192.168.1.1",
+        "reverse_dns": "192.168.1.1",
+        "is_private": true
+      }
+    },
+    {
+      "id": "port:192.168.1.1:53",
+      "label": ":53",
+      "type": "port",
+      "data": {
+        "port": 53,
+        "service": "domain",
+        "product": "dnsmasq",
+        "version": "2.45",
+        "version_str": "dnsmasq 2.45",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:thekelleys:dnsmasq:2.45"
+        ],
+        "host": "192.168.1.1",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.1:53:dns-nsid",
+      "label": "dns-nsid",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "dns-nsid",
+        "output": "bind.version: dnsmasq-2.45\nbind.version: dnsmasq-2.45",
+        "port": 53,
+        "host": "192.168.1.1"
+      }
+    },
+    {
+      "id": "port:192.168.1.1:80",
+      "label": ":80",
+      "type": "port",
+      "data": {
+        "port": 80,
+        "service": "http",
+        "product": "Boa HTTPd",
+        "version": "0.93.15",
+        "version_str": "Boa HTTPd 0.93.15",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:boa:boa:0.93.15"
+        ],
+        "host": "192.168.1.1",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.1:80:http-title",
+      "label": "http-title",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-title",
+        "output": "BroadBand Device Webserver\nRequested resource was /admin/login.asp\ntitle: BroadBand Device Webserver\nredirect_url: /admin/login.asp",
+        "port": 80,
+        "host": "192.168.1.1"
+      }
+    },
+    {
+      "id": "nse:192.168.1.1:80:http-methods",
+      "label": "http-methods",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-methods",
+        "output": "Supported Methods: HEAD",
+        "port": 80,
+        "host": "192.168.1.1"
+      }
+    },
+    {
+      "id": "port:192.168.1.1:443",
+      "label": ":443",
+      "type": "port",
+      "data": {
+        "port": 443,
+        "service": "http",
+        "product": "Boa HTTPd",
+        "version": "0.93.15",
+        "version_str": "Boa HTTPd 0.93.15",
+        "protocol": "tcp",
+        "cpe": [
+          "cpe:/a:boa:boa:0.93.15"
+        ],
+        "host": "192.168.1.1",
+        "source": "rustscan"
+      }
+    },
+    {
+      "id": "nse:192.168.1.1:443:sslv2",
+      "label": "sslv2",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "sslv2",
+        "output": "SSLv2 supported\n  ciphers: none\nciphers: none",
+        "port": 443,
+        "host": "192.168.1.1"
+      }
+    },
+    {
+      "id": "nse:192.168.1.1:443:http-methods",
+      "label": "http-methods",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-methods",
+        "output": "Supported Methods: HEAD OPTIONS",
+        "port": 443,
+        "host": "192.168.1.1"
+      }
+    },
+    {
+      "id": "nse:192.168.1.1:443:ssl-cert",
+      "label": "ssl-cert",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "ssl-cert",
+        "output": "Subject: commonName=192.168.1.1/organizationName=realtek/stateOrProvinceName=Jiangsu/countryName=CN/organizationalUnitName=realtek/localityName=suzhou/emailAddress=192.168.1.1\nIssuer: commonName=192.168.1.1/organizationName=realtek/stateOrProvinceName=Jiangsu/countryName=CN/organizationalUnitName=realtek/localityName=suzhou/emailAddress=192.168.1.1\nPublic Key type: rsa\nPublic Key bits: 2048\nSignat",
+        "port": 443,
+        "host": "192.168.1.1"
+      }
+    },
+    {
+      "id": "nse:192.168.1.1:443:http-title",
+      "label": "http-title",
+      "type": "nse_finding",
+      "data": {
+        "script_id": "http-title",
+        "output": "BroadBand Device Webserver\nRequested resource was /admin/login.asp\ntitle: BroadBand Device Webserver\nredirect_url: /admin/login.asp",
+        "port": 443,
+        "host": "192.168.1.1"
+      }
+    },
+    {
+      "id": "endpoint:http://192.168.1.1/",
+      "label": "/",
+      "type": "endpoint",
+      "data": {
+        "url": "http://192.168.1.1/",
+        "status": 200,
+        "content_type": "text/html",
+        "server": "Boa/0.93.15",
+        "content_length": "?",
+        "interesting": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "root:192.168.1.1",
+      "target": "ip:192.168.1.1",
+      "label": "A"
+    },
+    {
+      "source": "ip:192.168.1.1",
+      "target": "port:192.168.1.1:53",
+      "label": "port/domain"
+    },
+    {
+      "source": "port:192.168.1.1:53",
+      "target": "nse:192.168.1.1:53:dns-nsid",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.1",
+      "target": "port:192.168.1.1:80",
+      "label": "port/http"
+    },
+    {
+      "source": "port:192.168.1.1:80",
+      "target": "nse:192.168.1.1:80:http-title",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.1:80",
+      "target": "nse:192.168.1.1:80:http-methods",
+      "label": "NSE"
+    },
+    {
+      "source": "ip:192.168.1.1",
+      "target": "port:192.168.1.1:443",
+      "label": "port/http"
+    },
+    {
+      "source": "port:192.168.1.1:443",
+      "target": "nse:192.168.1.1:443:sslv2",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.1:443",
+      "target": "nse:192.168.1.1:443:http-methods",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.1:443",
+      "target": "nse:192.168.1.1:443:ssl-cert",
+      "label": "NSE"
+    },
+    {
+      "source": "port:192.168.1.1:443",
+      "target": "nse:192.168.1.1:443:http-title",
+      "label": "NSE"
+    },
+    {
+      "source": "root:192.168.1.1",
+      "target": "endpoint:http://192.168.1.1/",
+      "label": "200"
+    }
+  ]
+}
