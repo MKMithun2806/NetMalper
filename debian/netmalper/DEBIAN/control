@@ -1,8 +1,8 @@
 Package: netmalper
-Version: 3.0.0-1
+Version: 8.0.0-1
 Architecture: all
 Maintainer: Mithun Krish <your-email@example.com>
-Installed-Size: 108
+Installed-Size: 118
 Depends: python3, dnsutils, nmap
 Recommends: rustscan
 Section: utils

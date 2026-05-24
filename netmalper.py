@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-netmalper.py — network recon mapper  v7.2.0
+netmalper.py — network recon mapper  v8.0.0
 
 Subdomain enumeration (layered, merged):
-  1. Amass  --passive  (OSINT, no active probing — default when amass found)
+  1. Amass  --active by default, --passive in stealth mode
   2. Custom wordlist brute-force (always runs, --subdomains to override file)
   Both sets are merged and deduplicated.
 
 Port discovery pipeline:
   1. RustScan → fast port discovery + Nmap service/version analysis
-  2. Socket / full Nmap → fallback scans that run only after all RustScan retries fail
-  If RustScan is not available → falls back to socket/full-Nmap scanning.
+  2. Naabu   → stealth port discovery + Nmap deep scanning
+  3. Socket / full Nmap → fallback scans that run only after the primary scanner fails
+  If the primary scanner is not available → falls back to socket/full-Nmap scanning.
 
 RustScan mode:
   Uses Nmap XML when available; greppable output is the fallback mode.
@@ -23,14 +24,15 @@ Options:
   --out FILE             Output JSON (default: <target>_graph.json)
   --timeout SEC          Per-probe timeout (default: 3)
   --threads N            Thread count (default: 30)
-  --amass-timeout SEC    Amass timeout in seconds (default: 120)
-  --no-amass             Skip amass passive enum
+  --amass-timeout SEC    Amass active-mode timeout in seconds (default: 1800)
+  --stealth              Use Naabu + Nmap deep scanning and passive Amass
+  --no-amass             Skip Amass enumeration
   --no-wordlist          Skip built-in + custom wordlist brute-force
   --no-rustscan          Skip RustScan and use the socket scanner only
   --rustscan-greppable   Parse RustScan's greppable output instead of Nmap XML
   --rustscan-batch-size N  RustScan batch size (default: 4500)
   --rustscan-timeout MS  RustScan timeout in milliseconds (default: 1500)
-  --rustscan-process-timeout SEC  Total RustScan process budget across retries (default: 1800, max: 1800)
+  --rustscan-process-timeout SEC  Total port-scan process budget across retries (default: 1800, max: 1800)
   --rustscan-retries N   RustScan retry attempts (default: 3)
   --rustscan-min-batch-size N  Minimum RustScan batch size on retries (default: 128)
   --rustscan-nofile-soft N  Soft RLIMIT_NOFILE floor to try to raise to (default: 8192)
@@ -68,7 +70,7 @@ try:
 except ImportError:  # pragma: no cover - non-Unix platforms
     resource = None
 
-VERSION = "7.2.0"
+VERSION = "8.0.0"
 RUSTSCAN_PROCESS_TIMEOUT_MAX = 1800
 
 # ── colours ───────────────────────────────────────────────────────────────────
@@ -84,8 +86,9 @@ def log(level, msg):
         "ok":     f"{GN}[+]{R}",
         "warn":   f"{YL}[!]{R}",
         "err":    f"{RD}[-]{R}",
-    "rs":     f"{MG}[RS]{R}",
-    "nmap":   f"{BL}[NM]{R}",
+        "rs":     f"{MG}[RS]{R}",
+        "naabu":  f"{MG}[NB]{R}",
+        "nmap":   f"{BL}[NM]{R}",
         "amass":  f"{CY}[A]{R}",
         "sock":   f"{BL}[S]{R}",
         "merge":  f"{YL}[M]{R}",
@@ -94,15 +97,17 @@ def log(level, msg):
     }
     print(f"{GY}{ts}{R} {sym.get(level,'[?]')} {msg}", flush=True)
 
-def banner(target, has_rustscan, has_amass, is_root):
+def banner(target, has_rustscan, has_naabu, has_amass, is_root, stealth):
     tick  = lambda b: f"{GN}✓{R}" if b else f"{RD}✗{R}"
     priv  = f"{GN}root{R}" if is_root else f"{YL}non-root{R}"
+    mode  = f"{MG}stealth{R}" if stealth else f"{CY}standard{R}"
     print(f"""
 {CY}╔══════════════════════════════════════════════════════╗
 ║  {B}netmalper{R}{CY}  v{VERSION}  —  recon graph mapper            ║
 ╚══════════════════════════════════════════════════════╝{R}
 {GY}  target   : {B}{target}{R}
-{GY}  rustscan : {tick(has_rustscan)}  amass : {tick(has_amass)}
+{GY}  rustscan : {tick(has_rustscan)}  naabu : {tick(has_naabu)}  amass : {tick(has_amass)}
+{GY}  mode     : {mode}
 {GY}  privs     : {priv}
 {GY}  time      : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{R}
 """)
@@ -217,21 +222,22 @@ BUILTIN_SUBS = [
     "search","solr","elasticsearch","es",
 ]
 
-# ── amass passive ─────────────────────────────────────────────────────────────
-def run_amass(target: str, amass_bin: str, timeout: int) -> set[str]:
-    """Run amass enum --passive and return set of discovered FQDNs."""
-    log("amass", f"Running passive OSINT enum for {B}{target}{R}…")
+# ── amass enumeration ─────────────────────────────────────────────────────────
+def run_amass(target: str, amass_bin: str, timeout: int, passive: bool) -> set[str]:
+    """Run amass enum in passive or active mode and return discovered FQDNs."""
+    mode = "passive" if passive else "active"
+    log("amass", f"Running {mode} OSINT enum for {B}{target}{R}…")
     found: set[str] = set()
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tf:
         out_file = tf.name
 
-    cmd = [
-        amass_bin, "enum",
-        "--passive",
+    cmd = [amass_bin, "enum"]
+    cmd.append("--passive" if passive else "--active")
+    cmd += [
         "-d", target,
         "-o", out_file,
-        "-timeout", str(timeout // 60 or 2),   # amass uses minutes
+        "-timeout", str(max(1, timeout // 60)),   # amass uses minutes
     ]
     log("amass", f"  cmd: {' '.join(cmd)}")
 
@@ -254,7 +260,7 @@ def run_amass(target: str, amass_bin: str, timeout: int) -> set[str]:
                         found.add(fqdn)
         os.unlink(out_file)
 
-    log("amass", f"  found {GN}{len(found)}{R} subdomains via passive OSINT")
+    log("amass", f"  found {GN}{len(found)}{R} subdomains via {mode} OSINT")
     return found
 
 # ── wordlist brute-force ──────────────────────────────────────────────────────
@@ -285,7 +291,7 @@ def enum_subdomains(target: str, g: Graph, root_id: str,
                     amass_bin: Optional[str], wordlist: list[str],
                     timeout: int, threads: int,
                     use_amass: bool, use_wordlist: bool,
-                    amass_timeout: int) -> list[str]:
+                    amass_timeout: int, amass_passive: bool) -> list[str]:
 
     all_fqdns: set[str] = set()
 
@@ -293,7 +299,7 @@ def enum_subdomains(target: str, g: Graph, root_id: str,
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
         futures = {}
         if use_amass and amass_bin:
-            futures["amass"] = ex.submit(run_amass, target, amass_bin, amass_timeout)
+            futures["amass"] = ex.submit(run_amass, target, amass_bin, amass_timeout, amass_passive)
         if use_wordlist and wordlist:
             futures["brute"] = ex.submit(brute_subdomains, target, wordlist, timeout, threads)
 
@@ -796,6 +802,67 @@ def run_nmap_scan(host: str, nmap_bin: str, is_root: bool,
     return host_results, sorted(set(open_ports))
 
 
+def parse_naabu_ports(output: str) -> list[int]:
+    ports: set[int] = set()
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("{"):
+            try:
+                data = json.loads(line)
+                port = data.get("port")
+                if port is not None:
+                    ports.add(int(port))
+                    continue
+            except Exception:
+                pass
+        match = re.search(r":(\d{1,5})\b", line)
+        if match:
+            try:
+                ports.add(int(match.group(1)))
+            except ValueError:
+                pass
+    return sorted(ports)
+
+
+def run_naabu(host: str, naabu_bin: str, timeout_ms: int, process_timeout_sec: int) -> list[int]:
+    """
+    Run Naabu port discovery and return a port list.
+    """
+    log("naabu", f"Running Naabu for {B}{host}{R}…")
+    cmd = [
+        naabu_bin,
+        "-host", host,
+        "-p", "-",
+        "-json",
+        "-silent",
+        "-timeout", str(max(250, timeout_ms)),
+    ]
+    log("naabu", f"  cmd: {' '.join(cmd)}")
+
+    process_timeout_sec = max(1, min(process_timeout_sec, RUSTSCAN_PROCESS_TIMEOUT_MAX))
+    raw_output = ""
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            timeout=process_timeout_sec,
+        )
+        raw_output = join_process_output(result.stdout, result.stderr)
+    except subprocess.TimeoutExpired as e:
+        raw_output = join_process_output(e.stdout, e.stderr)
+        log("warn", f"naabu timed out on {host} — using partial results")
+    except FileNotFoundError:
+        log("warn", "naabu not found on PATH")
+        return []
+    except Exception as e:
+        log("err", f"naabu error: {e}")
+        return []
+
+    return parse_naabu_ports(raw_output)
+
+
 def run_fallback_scans(host: str, fallback_ports: list[int], g: Graph, parent_id: str,
                        timeout: int, threads: int, nmap_bin: Optional[str],
                        is_root: bool, use_socket: bool,
@@ -885,15 +952,64 @@ def socket_scan(host: str, ports: list[int], g: Graph, parent_id: str,
 def scan_host(host: str, fallback_ports: list[int], g: Graph, parent_id: str,
               timeout: int, threads: int,
               rustscan_bin: Optional[str],
+              naabu_bin: Optional[str],
               nmap_bin: Optional[str],
-              is_root: bool, use_rustscan: bool, use_socket: bool,
+              is_root: bool, use_stealth: bool, use_rustscan: bool, use_socket: bool,
               rustscan_greppable: bool, rustscan_batch_size: int,
               rustscan_timeout: int, rustscan_retries: int,
               rustscan_min_batch_size: int, rustscan_nofile_soft: int,
               rustscan_process_timeout: int) -> list[int]:
 
-    # RustScan is the gatekeeper now. Fallback scans only run after all retries
-    # fail to produce any usable port data.
+    # Stealth mode uses Naabu first. Normal mode keeps RustScan as the fast
+    # discovery front-end.
+    if use_stealth:
+        if naabu_bin:
+            naabu_ports = run_naabu(host, naabu_bin, timeout * 1000, rustscan_process_timeout)
+            if naabu_ports:
+                if nmap_bin:
+                    nmap_results, nmap_ports = run_nmap_scan(
+                        host,
+                        nmap_bin,
+                        is_root,
+                        rustscan_process_timeout,
+                        naabu_ports,
+                    )
+                    if nmap_results:
+                        inject_rustscan(nmap_results, host, g, parent_id, source="nmap")
+                        return sorted(set(nmap_ports or naabu_ports))
+                    if nmap_ports:
+                        inject_rustscan_ports(host, nmap_ports, g, parent_id, source="nmap")
+                        return sorted(set(nmap_ports))
+                inject_rustscan_ports(host, naabu_ports, g, parent_id, source="naabu")
+                return sorted(set(naabu_ports))
+
+            log("warn", f"Naabu returned no usable ports for {host}")
+        else:
+            log("warn", "naabu not found on PATH")
+
+        all_open, used_nmap, used_socket, socket_open_count = run_fallback_scans(
+            host,
+            fallback_ports,
+            g,
+            parent_id,
+            timeout,
+            threads,
+            nmap_bin,
+            is_root,
+            use_socket,
+            rustscan_process_timeout,
+        )
+        if all_open:
+            sources = []
+            if used_nmap:
+                sources.append("nmap=full")
+            if used_socket:
+                sources.append(f"socket={socket_open_count}")
+            log("merge", f"  open={len(all_open)}  " + "  ".join(sources))
+        return all_open
+
+    # RustScan is the gatekeeper in normal mode. Fallback scans only run after
+    # all retries fail to produce any usable port data.
     if use_rustscan and rustscan_bin:
         rustscan_results, rustscan_ports = run_rustscan(
             host,
@@ -1038,7 +1154,7 @@ def probe_http(host: str, g: Graph, parent_id: str,
 
 def main():
     ap = argparse.ArgumentParser(
-        description="netmalper v7 — amass + rustscan recon graph mapper",
+        description="netmalper v8 — amass + rustscan + naabu recon graph mapper",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -1048,7 +1164,10 @@ def main():
     ap.add_argument("--out",            default=None)
     ap.add_argument("--timeout",        type=int, default=3)
     ap.add_argument("--threads",        type=int, default=30)
-    ap.add_argument("--amass-timeout",  type=int, default=120)
+    ap.add_argument("--amass-timeout",  type=int, default=1800,
+                    help="Amass active-mode timeout in seconds (default: 1800)")
+    ap.add_argument("--stealth",        action="store_true",
+                    help="Use Naabu + Nmap deep scanning and passive Amass")
     ap.add_argument("--no-amass",       action="store_true")
     ap.add_argument("--no-wordlist",    action="store_true")
     ap.add_argument("--no-rustscan",    action="store_true",
@@ -1089,25 +1208,38 @@ def main():
     # ── detect tools ──────────────────────────────────────────────────────────
     is_root   = check_root()
     rustscan_bin = find_tool("rustscan") if not args.no_rustscan else None
+    naabu_bin    = find_tool("naabu") if args.stealth else None
     nmap_bin     = find_tool("nmap")
     amass_bin    = find_tool("amass") if not args.no_amass else None
 
-    use_rustscan = bool(rustscan_bin) and not args.no_rustscan
+    use_stealth  = bool(args.stealth)
+    use_rustscan = bool(rustscan_bin) and not args.no_rustscan and not use_stealth
+    use_naabu    = bool(naabu_bin) and use_stealth
     use_amass    = bool(amass_bin) and not args.no_amass
     use_socket   = not args.no_socket
     use_wordlist = not args.no_wordlist
+    amass_passive = use_stealth
+    amass_timeout = 3600 if use_stealth else args.amass_timeout
 
-    banner(target, use_rustscan, use_amass, is_root)
+    banner(target, use_rustscan, use_naabu, use_amass, is_root, use_stealth)
 
-    if use_rustscan and is_root:
+    if use_stealth and use_naabu:
+        log("naabu", f"{MG}Naabu stealth mode enabled{R}")
+    elif use_rustscan and is_root:
         log("rs", f"{GN}SYN scan + OS fingerprinting enabled (root){R}")
     elif use_rustscan:
         log("warn", "Non-root: using -sT (TCP connect), no OS fingerprint")
 
-    if use_rustscan and not nmap_bin:
+    if use_stealth and not naabu_bin:
+        log("warn", "naabu not found — stealth mode will fall back to Nmap/socket scanning")
+        log("warn", "  install: go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest")
+
+    if use_stealth and not nmap_bin:
+        log("warn", "nmap not found — stealth mode will fall back to socket/full scan if Naabu fails")
+    elif use_rustscan and not nmap_bin:
         log("warn", "nmap not found — fallback Nmap scan will be unavailable if RustScan fails")
 
-    if not rustscan_bin and not args.no_rustscan:
+    if not use_stealth and not rustscan_bin and not args.no_rustscan:
         log("warn", "rustscan not found — using socket scanner only")
         log("warn", "  install: cargo install rustscan")
 
@@ -1150,19 +1282,20 @@ def main():
         log("info", "DNS chain resolution…")
         dns_chain(target, g, root_id, args.timeout)
 
-    # ── 2. Subdomain enumeration (amass passive + wordlist, parallel) ─────────
+    # ── 2. Subdomain enumeration (amass + wordlist, parallel) ────────────────
     found_subs: list[str] = []
     if not args.no_subs:
         log("info", f"{'─'*50}")
         log("info", f"Subdomain enumeration  "
-                    f"[amass={'passive' if use_amass else 'skip'}  "
+                    f"[amass={'passive' if amass_passive else 'active' if use_amass else 'skip'}  "
                     f"wordlist={'yes' if use_wordlist else 'skip'}]")
         found_subs = enum_subdomains(
             target, g, root_id,
             amass_bin, wordlist,
             args.timeout, args.threads,
             use_amass, use_wordlist,
-            args.amass_timeout,
+            amass_timeout,
+            amass_passive,
         )
 
     # ── 3. Port scanning: rustscan + socket ──────────────────────────────────
@@ -1178,13 +1311,13 @@ def main():
                       else f"ip:{st}"   if f"ip:{st}" in g.nodes
                       else root_id)
             log("info", f"{'─'*50}")
-            log("info", f"Scanning {B}{st}{R}  "
-                        f"[{'rustscan+socket' if use_rustscan else 'socket'}]")
+            scan_mode = "naabu+nmap+fallback" if use_stealth else ("rustscan+socket" if use_rustscan else "socket")
+            log("info", f"Scanning {B}{st}{R}  [{scan_mode}]")
             open_p = scan_host(
                 st, fallback_ports, g, parent,
                 args.timeout, args.threads,
-                rustscan_bin, nmap_bin,
-                is_root, use_rustscan, use_socket,
+                rustscan_bin, naabu_bin, nmap_bin,
+                is_root, use_stealth, use_rustscan, use_socket,
                 args.rustscan_greppable, args.rustscan_batch_size,
                 args.rustscan_timeout, args.rustscan_retries,
                 args.rustscan_min_batch_size,
@@ -1216,6 +1349,10 @@ def main():
         "rustscan_nofile_soft": args.rustscan_nofile_soft,
         "rustscan_timeout_ms": args.rustscan_timeout,
         "amass_used":   use_amass,
+        "amass_passive": amass_passive,
+        "amass_timeout_s": amass_timeout,
+        "stealth_used":  use_stealth,
+        "naabu_used":    use_naabu,
         "root_scan":    is_root,
         "node_count":   len(g.nodes),
         "edge_count":   len(g.edges),
@@ -1230,8 +1367,9 @@ def main():
   {GN}Nodes      :{R} {len(g.nodes)}
   {GN}Edges      :{R} {len(g.edges)}
   {GN}Subdomains :{R} {len(found_subs)}
-  {GN}amass      :{R} {GN+'passive ✓'+R if use_amass else GY+'skipped'+R}
-  {GN}rustscan   :{R} {GN+'✓'+R if use_rustscan else GY+'skipped (socket fallback)'+R}
+  {GN}amass      :{R} {GN+(('passive ✓' if amass_passive else 'active ✓'))+R if use_amass else GY+'skipped'+R}
+  {GN}stealth    :{R} {GN+'✓'+R if use_stealth else GY+'off'+R}
+  {GN}rustscan   :{R} {GN+'✓'+R if use_rustscan else GY+'skipped (naabu/socket fallback)'+R}
   {GN}root scan  :{R} {GN+'SYN+OS'+R if is_root else YL+'TCP connect'+R}
   {GN}output     :{R} {out_path}
 {CY}{'─'*54}{R}

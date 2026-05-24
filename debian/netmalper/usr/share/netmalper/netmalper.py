@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 """
-netmalper.py — network recon mapper  v3.0.0
+netmalper.py — network recon mapper  v8.0.0
 
 Subdomain enumeration (layered, merged):
-  1. Amass  --passive  (OSINT, no active probing — default when amass found)
+  1. Amass  --active by default, --passive in stealth mode
   2. Custom wordlist brute-force (always runs, --subdomains to override file)
   Both sets are merged and deduplicated.
 
 Port discovery pipeline:
-  1. RustScan → fast port discovery + native Nmap integration
-  2. Socket   → parallel TCP connect on the same ports (fallback + confirmation)
-  If RustScan is not available → falls back to the default socket port list.
+  1. RustScan → fast port discovery + Nmap service/version analysis
+  2. Naabu   → stealth port discovery + Nmap deep scanning
+  3. Socket / full Nmap → fallback scans that run only after the primary scanner fails
+  If the primary scanner is not available → falls back to socket/full-Nmap scanning.
 
-RustScan flags (privilege-aware):
-  root    →  -sS (SYN) + -O (OS fingerprint)
-  non-root → -sT (TCP connect)
-  always  →  -sV --script default
+RustScan mode:
+  Uses Nmap XML when available; greppable output is the fallback mode.
 
 Usage:
   python netmalper.py <target> [options]
@@ -25,13 +24,15 @@ Options:
   --out FILE             Output JSON (default: <target>_graph.json)
   --timeout SEC          Per-probe timeout (default: 3)
   --threads N            Thread count (default: 30)
-  --amass-timeout SEC    Amass timeout in seconds (default: 120)
-  --no-amass             Skip amass passive enum
+  --amass-timeout SEC    Amass active-mode timeout in seconds (default: 1800)
+  --stealth              Use Naabu + Nmap deep scanning and passive Amass
+  --no-amass             Skip Amass enumeration
   --no-wordlist          Skip built-in + custom wordlist brute-force
   --no-rustscan          Skip RustScan and use the socket scanner only
   --rustscan-greppable   Parse RustScan's greppable output instead of Nmap XML
   --rustscan-batch-size N  RustScan batch size (default: 4500)
   --rustscan-timeout MS  RustScan timeout in milliseconds (default: 1500)
+  --rustscan-process-timeout SEC  Total port-scan process budget across retries (default: 1800, max: 1800)
   --rustscan-retries N   RustScan retry attempts (default: 3)
   --rustscan-min-batch-size N  Minimum RustScan batch size on retries (default: 128)
   --rustscan-nofile-soft N  Soft RLIMIT_NOFILE floor to try to raise to (default: 8192)
@@ -69,7 +70,8 @@ try:
 except ImportError:  # pragma: no cover - non-Unix platforms
     resource = None
 
-VERSION = "3.0.0"
+VERSION = "8.0.0"
+RUSTSCAN_PROCESS_TIMEOUT_MAX = 1800
 
 # ── colours ───────────────────────────────────────────────────────────────────
 R  = "\033[0m";  B  = "\033[1m"
@@ -85,6 +87,8 @@ def log(level, msg):
         "warn":   f"{YL}[!]{R}",
         "err":    f"{RD}[-]{R}",
         "rs":     f"{MG}[RS]{R}",
+        "naabu":  f"{MG}[NB]{R}",
+        "nmap":   f"{BL}[NM]{R}",
         "amass":  f"{CY}[A]{R}",
         "sock":   f"{BL}[S]{R}",
         "merge":  f"{YL}[M]{R}",
@@ -93,15 +97,17 @@ def log(level, msg):
     }
     print(f"{GY}{ts}{R} {sym.get(level,'[?]')} {msg}", flush=True)
 
-def banner(target, has_rustscan, has_amass, is_root):
+def banner(target, has_rustscan, has_naabu, has_amass, is_root, stealth):
     tick  = lambda b: f"{GN}✓{R}" if b else f"{RD}✗{R}"
     priv  = f"{GN}root{R}" if is_root else f"{YL}non-root{R}"
+    mode  = f"{MG}stealth{R}" if stealth else f"{CY}standard{R}"
     print(f"""
 {CY}╔══════════════════════════════════════════════════════╗
 ║  {B}netmalper{R}{CY}  v{VERSION}  —  recon graph mapper            ║
 ╚══════════════════════════════════════════════════════╝{R}
 {GY}  target   : {B}{target}{R}
-{GY}  rustscan : {tick(has_rustscan)}  amass : {tick(has_amass)}
+{GY}  rustscan : {tick(has_rustscan)}  naabu : {tick(has_naabu)}  amass : {tick(has_amass)}
+{GY}  mode     : {mode}
 {GY}  privs     : {priv}
 {GY}  time      : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}{R}
 """)
@@ -216,21 +222,22 @@ BUILTIN_SUBS = [
     "search","solr","elasticsearch","es",
 ]
 
-# ── amass passive ─────────────────────────────────────────────────────────────
-def run_amass(target: str, amass_bin: str, timeout: int) -> set[str]:
-    """Run amass enum --passive and return set of discovered FQDNs."""
-    log("amass", f"Running passive OSINT enum for {B}{target}{R}…")
+# ── amass enumeration ─────────────────────────────────────────────────────────
+def run_amass(target: str, amass_bin: str, timeout: int, passive: bool) -> set[str]:
+    """Run amass enum in passive or active mode and return discovered FQDNs."""
+    mode = "passive" if passive else "active"
+    log("amass", f"Running {mode} OSINT enum for {B}{target}{R}…")
     found: set[str] = set()
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tf:
         out_file = tf.name
 
-    cmd = [
-        amass_bin, "enum",
-        "--passive",
+    cmd = [amass_bin, "enum"]
+    cmd.append("--passive" if passive else "--active")
+    cmd += [
         "-d", target,
         "-o", out_file,
-        "-timeout", str(timeout // 60 or 2),   # amass uses minutes
+        "-timeout", str(max(1, timeout // 60)),   # amass uses minutes
     ]
     log("amass", f"  cmd: {' '.join(cmd)}")
 
@@ -253,7 +260,7 @@ def run_amass(target: str, amass_bin: str, timeout: int) -> set[str]:
                         found.add(fqdn)
         os.unlink(out_file)
 
-    log("amass", f"  found {GN}{len(found)}{R} subdomains via passive OSINT")
+    log("amass", f"  found {GN}{len(found)}{R} subdomains via {mode} OSINT")
     return found
 
 # ── wordlist brute-force ──────────────────────────────────────────────────────
@@ -284,7 +291,7 @@ def enum_subdomains(target: str, g: Graph, root_id: str,
                     amass_bin: Optional[str], wordlist: list[str],
                     timeout: int, threads: int,
                     use_amass: bool, use_wordlist: bool,
-                    amass_timeout: int) -> list[str]:
+                    amass_timeout: int, amass_passive: bool) -> list[str]:
 
     all_fqdns: set[str] = set()
 
@@ -292,7 +299,7 @@ def enum_subdomains(target: str, g: Graph, root_id: str,
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
         futures = {}
         if use_amass and amass_bin:
-            futures["amass"] = ex.submit(run_amass, target, amass_bin, amass_timeout)
+            futures["amass"] = ex.submit(run_amass, target, amass_bin, amass_timeout, amass_passive)
         if use_wordlist and wordlist:
             futures["brute"] = ex.submit(brute_subdomains, target, wordlist, timeout, threads)
 
@@ -406,6 +413,25 @@ def rustscan_backoff(batch_size: int, timeout_ms: int, attempt: int,
     next_timeout = int(timeout_ms * (1.5 ** attempt))
     next_timeout = max(next_timeout, timeout_ms + (attempt * 500))
     return next_batch, next_timeout
+
+
+def decode_stream(value: object) -> str:
+    """
+    Normalize subprocess output to text.
+
+    TimeoutExpired can surface bytes even when text mode was requested, so we
+    decode defensively and keep partial output usable.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", "replace")
+    return str(value)
+
+
+def join_process_output(stdout: object, stderr: object) -> str:
+    parts = [decode_stream(stdout), decode_stream(stderr)]
+    return "\n".join(part for part in parts if part)
 
 def extract_nmap_xml(text: str) -> Optional[str]:
     if not text:
@@ -521,7 +547,9 @@ def parse_scan_xml(xml_str: str) -> list[dict]:
     return hosts
 
 
-def inject_rustscan(host_results: list[dict], host: str, g: Graph, parent_id: str):
+def inject_rustscan(host_results: list[dict], host: str, g: Graph, parent_id: str,
+                    source: str = "rustscan"):
+    level = "nmap" if source == "nmap" else "rs"
     for hr in host_results:
         ip     = hr["host"]
         ip_nid = f"ip:{ip}"
@@ -531,7 +559,7 @@ def inject_rustscan(host_results: list[dict], host: str, g: Graph, parent_id: st
             except: rdns = ip
             g.add_node(ip_nid, ip, "ip", {
                 "ip": ip, "reverse_dns": rdns,
-                "is_private": _is_private(ip), "source": "rustscan",
+                "is_private": _is_private(ip), "source": source,
             })
             g.add_edge(parent_id, ip_nid, "A")
 
@@ -542,7 +570,7 @@ def inject_rustscan(host_results: list[dict], host: str, g: Graph, parent_id: st
                 "os_name": osm["name"], "accuracy": osm["accuracy"], "host": ip,
             })
             g.add_edge(ip_nid, osnid, f"OS {osm['accuracy']}%")
-            log("rs", f"  OS guess: {osm['name']} ({osm['accuracy']}%)")
+            log(level, f"  OS guess: {osm['name']} ({osm['accuracy']}%)")
 
         for p in hr["ports"]:
             portnum     = p["port"]
@@ -554,13 +582,13 @@ def inject_rustscan(host_results: list[dict], host: str, g: Graph, parent_id: st
                 "port": portnum, "service": svc_name,
                 "product": p["product"], "version": p["version"],
                 "version_str": version_str, "protocol": p["protocol"],
-                "cpe": p["cpe"], "host": ip, "source": "rustscan",
+                "cpe": p["cpe"], "host": ip, "source": source,
             })
             g.add_edge(ip_nid, port_nid, f"port/{svc_name}")
 
             vstr = f"{GN}{portnum}/open{R}  {YL}{svc_name}{R}"
             if version_str: vstr += f"  {GY}{version_str}{R}"
-            log("rs", f"  {vstr}")
+            log(level, f"  {vstr}")
 
             boring = {"ssl-date","ssh-hostkey","http-server-header"}
             for script in p["scripts"]:
@@ -571,27 +599,31 @@ def inject_rustscan(host_results: list[dict], host: str, g: Graph, parent_id: st
                     "port": portnum, "host": ip,
                 })
                 g.add_edge(port_nid, snid, "NSE")
-                log("rs", f"  NSE [{script['id']}] {script['output'].splitlines()[0][:50]}")
+                log(level, f"  NSE [{script['id']}] {script['output'].splitlines()[0][:50]}")
 
 
-def inject_rustscan_ports(host: str, ports: list[int], g: Graph, parent_id: str):
+def inject_rustscan_ports(host: str, ports: list[int], g: Graph, parent_id: str,
+                          source: str = "rustscan"):
+    level = "nmap" if source == "nmap" else "rs"
     for port in ports:
         svc = SERVICE_MAP.get(port, "unknown")
         nid = f"port:{host}:{port}"
         g.add_node(nid, f":{port}", "port", {
             "port": port, "service": svc,
-            "host": host, "source": "rustscan",
+            "host": host, "source": source,
             "protocol": "tcp",
         })
         g.add_edge(parent_id, nid, f"port/{svc}")
-        log("rs", f"  {GN}{port}/open{R}  {YL}{svc}{R}")
+        log(level, f"  {GN}{port}/open{R}  {YL}{svc}{R}")
 
 
 def run_rustscan(host: str, rustscan_bin: str, timeout_ms: int, batch_size: int,
                  is_root: bool, nmap_bin: Optional[str], greppable: bool,
-                 retries: int, min_batch_size: int, nofile_soft: int) -> tuple[list[dict], list[int]]:
+                 retries: int, min_batch_size: int, nofile_soft: int,
+                 process_timeout_sec: int) -> tuple[list[dict], list[int]]:
     """
-    Run RustScan and return (structured host results, open port list).
+    Run RustScan with optional Nmap XML handoff and return
+    (structured host results, open port list).
     """
     use_nmap_xml = bool(nmap_bin) and not greppable
     if not nmap_bin and not greppable:
@@ -601,6 +633,9 @@ def run_rustscan(host: str, rustscan_bin: str, timeout_ms: int, batch_size: int,
     open_ports: list[int] = []
 
     ensure_nofile_limit(nofile_soft)
+
+    process_timeout_sec = max(1, min(process_timeout_sec, RUSTSCAN_PROCESS_TIMEOUT_MAX))
+    deadline = time.monotonic() + process_timeout_sec
 
     attempts: list[tuple[int, int]] = []
     cur_batch, cur_timeout = batch_size, timeout_ms
@@ -622,7 +657,6 @@ def run_rustscan(host: str, rustscan_bin: str, timeout_ms: int, batch_size: int,
             "--batch-size", str(cur_batch),
             "--timeout", str(cur_timeout),
         ]
-
         if use_nmap_xml:
             nmap_args = ["-sV", "--version-intensity", "5", "--script", "default"]
             if is_root:
@@ -644,17 +678,19 @@ def run_rustscan(host: str, rustscan_bin: str, timeout_ms: int, batch_size: int,
         raw_output = ""
         returncode = 0
         try:
-            runtime_timeout = max(90, int((cur_timeout / 1000) * 30))
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                log("warn", f"RustScan process budget exhausted for {host}")
+                break
             result = subprocess.run(
                 cmd,
                 capture_output=True,
-                text=True,
-                timeout=runtime_timeout,
+                timeout=remaining,
             )
-            raw_output = "\n".join(part for part in (result.stdout, result.stderr) if part)
+            raw_output = join_process_output(result.stdout, result.stderr)
             returncode = result.returncode
         except subprocess.TimeoutExpired as e:
-            raw_output = "\n".join(part for part in (e.stdout, e.stderr) if part)
+            raw_output = join_process_output(e.stdout, e.stderr)
             returncode = 124
             log("warn", f"rustscan timed out on {host} — using partial results")
         except FileNotFoundError:
@@ -710,6 +746,170 @@ def run_rustscan(host: str, rustscan_bin: str, timeout_ms: int, batch_size: int,
 
     return host_results, open_ports
 
+
+def run_nmap_scan(host: str, nmap_bin: str, is_root: bool,
+                  timeout_sec: int, ports: Optional[list[int]] = None) -> tuple[list[dict], list[int]]:
+    """
+    Run Nmap as a fallback after RustScan fails.
+    """
+    nmap_args = ["-sV", "-sC"]
+    if is_root:
+        nmap_args = ["-sS", "-O"] + nmap_args
+    else:
+        nmap_args = ["-sT"] + nmap_args
+    cmd = [nmap_bin]
+    if ports:
+        ports = sorted(set(ports))
+        if not ports:
+            return [], []
+        cmd += ["-p", ",".join(str(p) for p in ports)]
+    else:
+        cmd += ["-p-"]
+    cmd += nmap_args + ["-oX", "-", host]
+
+    port_desc = "all ports" if not ports else f"{len(ports)} ports"
+    log("nmap", f"Running Nmap fallback for {B}{host}{R} on {port_desc}…")
+    log("nmap", f"  cmd: {' '.join(cmd)}")
+
+    raw_output = ""
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            timeout=max(120, min(timeout_sec, RUSTSCAN_PROCESS_TIMEOUT_MAX)),
+        )
+        raw_output = join_process_output(result.stdout, result.stderr)
+    except subprocess.TimeoutExpired as e:
+        raw_output = join_process_output(e.stdout, e.stderr)
+        log("warn", f"nmap timed out on {host} — using partial results")
+    except FileNotFoundError:
+        log("warn", "nmap not found on PATH")
+        return [], []
+    except Exception as e:
+        log("err", f"nmap error: {e}")
+        return [], []
+
+    xml_blob = extract_nmap_xml(raw_output)
+    if not xml_blob:
+        if raw_output:
+            log("warn", f"Nmap output for {host} did not include XML")
+        return [], []
+
+    host_results = parse_scan_xml(xml_blob)
+    open_ports: list[int] = []
+    for hr in host_results:
+        open_ports.extend([p["port"] for p in hr["ports"]])
+    return host_results, sorted(set(open_ports))
+
+
+def parse_naabu_ports(output: str) -> list[int]:
+    ports: set[int] = set()
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("{"):
+            try:
+                data = json.loads(line)
+                port = data.get("port")
+                if port is not None:
+                    ports.add(int(port))
+                    continue
+            except Exception:
+                pass
+        match = re.search(r":(\d{1,5})\b", line)
+        if match:
+            try:
+                ports.add(int(match.group(1)))
+            except ValueError:
+                pass
+    return sorted(ports)
+
+
+def run_naabu(host: str, naabu_bin: str, timeout_ms: int, process_timeout_sec: int) -> list[int]:
+    """
+    Run Naabu port discovery and return a port list.
+    """
+    log("naabu", f"Running Naabu for {B}{host}{R}…")
+    cmd = [
+        naabu_bin,
+        "-host", host,
+        "-p", "-",
+        "-json",
+        "-silent",
+        "-timeout", str(max(250, timeout_ms)),
+    ]
+    log("naabu", f"  cmd: {' '.join(cmd)}")
+
+    process_timeout_sec = max(1, min(process_timeout_sec, RUSTSCAN_PROCESS_TIMEOUT_MAX))
+    raw_output = ""
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            timeout=process_timeout_sec,
+        )
+        raw_output = join_process_output(result.stdout, result.stderr)
+    except subprocess.TimeoutExpired as e:
+        raw_output = join_process_output(e.stdout, e.stderr)
+        log("warn", f"naabu timed out on {host} — using partial results")
+    except FileNotFoundError:
+        log("warn", "naabu not found on PATH")
+        return []
+    except Exception as e:
+        log("err", f"naabu error: {e}")
+        return []
+
+    return parse_naabu_ports(raw_output)
+
+
+def run_fallback_scans(host: str, fallback_ports: list[int], g: Graph, parent_id: str,
+                       timeout: int, threads: int, nmap_bin: Optional[str],
+                       is_root: bool, use_socket: bool,
+                       rustscan_process_timeout: int) -> tuple[list[int], bool, bool, int]:
+    """
+    Run fallback scanning after RustScan fails.
+    Prefer a full Nmap scan, then fall back to the socket scanner if needed.
+    """
+    fallback_ports = list(fallback_ports)
+
+    nmap_results: list[dict] = []
+    nmap_ports: list[int] = []
+    used_nmap = False
+    used_socket = False
+    socket_open_count = 0
+    if nmap_bin:
+        nmap_results, nmap_ports = run_nmap_scan(
+            host,
+            nmap_bin,
+            is_root,
+            rustscan_process_timeout,
+            None,
+        )
+        if nmap_results:
+            inject_rustscan(nmap_results, host, g, parent_id, source="nmap")
+            used_nmap = True
+        elif nmap_ports:
+            inject_rustscan_ports(host, nmap_ports, g, parent_id, source="nmap")
+            used_nmap = True
+
+    if nmap_ports:
+        return sorted(set(nmap_ports)), used_nmap, used_socket, socket_open_count
+
+    if use_socket and fallback_ports:
+        log("info", f"  Starting socket fallback on {len(fallback_ports)} ports")
+        socket_ports = socket_scan(host, fallback_ports, g, parent_id, timeout, threads)
+        used_socket = True
+        socket_open_count = len(socket_ports)
+        return socket_ports, used_nmap, used_socket, socket_open_count
+
+    if not nmap_bin:
+        log("warn", "nmap not found on PATH — fallback Nmap scan skipped")
+    elif not use_socket:
+        log("info", "  Socket fallback disabled")
+
+    return [], used_nmap, used_socket, socket_open_count
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  SOCKET SCANNER
 # ══════════════════════════════════════════════════════════════════════════════
@@ -752,73 +952,137 @@ def socket_scan(host: str, ports: list[int], g: Graph, parent_id: str,
 def scan_host(host: str, fallback_ports: list[int], g: Graph, parent_id: str,
               timeout: int, threads: int,
               rustscan_bin: Optional[str],
+              naabu_bin: Optional[str],
               nmap_bin: Optional[str],
-              is_root: bool, use_rustscan: bool, use_socket: bool,
+              is_root: bool, use_stealth: bool, use_rustscan: bool, use_socket: bool,
               rustscan_greppable: bool, rustscan_batch_size: int,
               rustscan_timeout: int, rustscan_retries: int,
-              rustscan_min_batch_size: int, rustscan_nofile_soft: int) -> list[int]:
+              rustscan_min_batch_size: int, rustscan_nofile_soft: int,
+              rustscan_process_timeout: int) -> list[int]:
 
-    # RustScan discovers ports and can hand off to Nmap; socket scanning stays
-    # as a lightweight fallback/confirmation pass on the common port list.
-    rustscan_results: list[dict] = []
-    rustscan_ports: list[int] = []
-    socket_ports: list[int] = []
+    # Stealth mode uses Naabu first. Normal mode keeps RustScan as the fast
+    # discovery front-end.
+    if use_stealth:
+        if naabu_bin:
+            naabu_ports = run_naabu(host, naabu_bin, timeout * 1000, rustscan_process_timeout)
+            if naabu_ports:
+                if nmap_bin:
+                    nmap_results, nmap_ports = run_nmap_scan(
+                        host,
+                        nmap_bin,
+                        is_root,
+                        rustscan_process_timeout,
+                        naabu_ports,
+                    )
+                    if nmap_results:
+                        inject_rustscan(nmap_results, host, g, parent_id, source="nmap")
+                        return sorted(set(nmap_ports or naabu_ports))
+                    if nmap_ports:
+                        inject_rustscan_ports(host, nmap_ports, g, parent_id, source="nmap")
+                        return sorted(set(nmap_ports))
+                inject_rustscan_ports(host, naabu_ports, g, parent_id, source="naabu")
+                return sorted(set(naabu_ports))
 
-    rustscan_future = None
-    socket_future = None
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
-        if use_rustscan and rustscan_bin:
-            rustscan_future = ex.submit(
-                run_rustscan,
-                host,
-                rustscan_bin,
-                rustscan_timeout,
-                rustscan_batch_size,
-                is_root,
-                nmap_bin,
-                rustscan_greppable,
-                rustscan_retries,
-                rustscan_min_batch_size,
-                rustscan_nofile_soft,
-            )
-        elif not use_rustscan:
-            if use_socket:
-                log("info", f"  RustScan skipped — using {len(fallback_ports)} default ports")
-            else:
-                log("info", "  RustScan skipped — socket scanner is disabled")
+            log("warn", f"Naabu returned no usable ports for {host}")
         else:
-            if use_socket:
-                log("warn", f"  RustScan not found — using {len(fallback_ports)} default ports")
-            else:
-                log("warn", "  RustScan not found — socket scanner is disabled")
+            log("warn", "naabu not found on PATH")
 
-        if use_socket and fallback_ports:
-            socket_future = ex.submit(socket_scan, host, fallback_ports, g, parent_id, timeout, threads)
+        all_open, used_nmap, used_socket, socket_open_count = run_fallback_scans(
+            host,
+            fallback_ports,
+            g,
+            parent_id,
+            timeout,
+            threads,
+            nmap_bin,
+            is_root,
+            use_socket,
+            rustscan_process_timeout,
+        )
+        if all_open:
+            sources = []
+            if used_nmap:
+                sources.append("nmap=full")
+            if used_socket:
+                sources.append(f"socket={socket_open_count}")
+            log("merge", f"  open={len(all_open)}  " + "  ".join(sources))
+        return all_open
 
-        if rustscan_future:
-            rustscan_results, rustscan_ports = rustscan_future.result()
-        if socket_future:
-            socket_ports = socket_future.result()
+    # RustScan is the gatekeeper in normal mode. Fallback scans only run after
+    # all retries fail to produce any usable port data.
+    if use_rustscan and rustscan_bin:
+        rustscan_results, rustscan_ports = run_rustscan(
+            host,
+            rustscan_bin,
+            rustscan_timeout,
+            rustscan_batch_size,
+            is_root,
+            nmap_bin,
+            rustscan_greppable,
+            rustscan_retries,
+            rustscan_min_batch_size,
+            rustscan_nofile_soft,
+            rustscan_process_timeout,
+        )
 
-    if rustscan_results:
-        inject_rustscan(rustscan_results, host, g, parent_id)
-    elif rustscan_ports:
-        inject_rustscan_ports(host, rustscan_ports, g, parent_id)
-    elif use_rustscan and rustscan_bin:
-        log("warn", f"RustScan returned no open ports for {host}")
-
-    all_open = sorted(set(socket_ports + rustscan_ports))
-
-    if all_open:
-        sources = []
+        if rustscan_results:
+            inject_rustscan(rustscan_results, host, g, parent_id, source="rustscan")
+            return sorted(set(rustscan_ports))
         if rustscan_ports:
-            sources.append(f"rustscan={len(rustscan_ports)}")
-        if socket_ports:
-            sources.append(f"socket={len(socket_ports)}")
-        if set(socket_ports) & set(rustscan_ports):
-            sources.append(f"confirmed={len(set(socket_ports) & set(rustscan_ports))}")
-        log("merge", f"  open={len(all_open)}  " + "  ".join(sources))
+            inject_rustscan_ports(host, rustscan_ports, g, parent_id, source="rustscan")
+            return sorted(set(rustscan_ports))
 
+        log("warn", f"RustScan exhausted all retries for {host} with no usable ports")
+        all_open, used_nmap, used_socket, socket_open_count = run_fallback_scans(
+            host,
+            fallback_ports,
+            g,
+            parent_id,
+            timeout,
+            threads,
+            nmap_bin,
+            is_root,
+            use_socket,
+            rustscan_process_timeout,
+        )
+        if all_open:
+            sources = []
+            if used_nmap:
+                sources.append("nmap=full")
+            if used_socket:
+                sources.append(f"socket={socket_open_count}")
+            log("merge", f"  open={len(all_open)}  " + "  ".join(sources))
+        return all_open
+
+    if not use_rustscan:
+        log("info", "  RustScan skipped — using fallback scans")
+        all_open, _, _, _ = run_fallback_scans(
+            host,
+            fallback_ports,
+            g,
+            parent_id,
+            timeout,
+            threads,
+            nmap_bin,
+            is_root,
+            use_socket,
+            rustscan_process_timeout,
+        )
+        return all_open
+
+    log("warn", "  RustScan not found — using fallback scans")
+    all_open, _, _, _ = run_fallback_scans(
+        host,
+        fallback_ports,
+        g,
+        parent_id,
+        timeout,
+        threads,
+        nmap_bin,
+        is_root,
+        use_socket,
+        rustscan_process_timeout,
+    )
     return all_open
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -890,7 +1154,7 @@ def probe_http(host: str, g: Graph, parent_id: str,
 
 def main():
     ap = argparse.ArgumentParser(
-        description="netmalper v3 — amass + rustscan recon graph mapper",
+        description="netmalper v8 — amass + rustscan + naabu recon graph mapper",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -900,7 +1164,10 @@ def main():
     ap.add_argument("--out",            default=None)
     ap.add_argument("--timeout",        type=int, default=3)
     ap.add_argument("--threads",        type=int, default=30)
-    ap.add_argument("--amass-timeout",  type=int, default=120)
+    ap.add_argument("--amass-timeout",  type=int, default=1800,
+                    help="Amass active-mode timeout in seconds (default: 1800)")
+    ap.add_argument("--stealth",        action="store_true",
+                    help="Use Naabu + Nmap deep scanning and passive Amass")
     ap.add_argument("--no-amass",       action="store_true")
     ap.add_argument("--no-wordlist",    action="store_true")
     ap.add_argument("--no-rustscan",    action="store_true",
@@ -911,6 +1178,8 @@ def main():
                     help="RustScan batch size (default: 4500)")
     ap.add_argument("--rustscan-timeout", type=int, default=1500,
                     help="RustScan timeout in milliseconds (default: 1500)")
+    ap.add_argument("--rustscan-process-timeout", type=int, default=1800,
+                    help="RustScan total process budget in seconds (default: 1800, max: 1800)")
     ap.add_argument("--rustscan-retries", type=int, default=3,
                     help="RustScan retry attempts (default: 3)")
     ap.add_argument("--rustscan-min-batch-size", type=int, default=128,
@@ -939,25 +1208,38 @@ def main():
     # ── detect tools ──────────────────────────────────────────────────────────
     is_root   = check_root()
     rustscan_bin = find_tool("rustscan") if not args.no_rustscan else None
+    naabu_bin    = find_tool("naabu") if args.stealth else None
     nmap_bin     = find_tool("nmap")
     amass_bin    = find_tool("amass") if not args.no_amass else None
 
-    use_rustscan = bool(rustscan_bin) and not args.no_rustscan
+    use_stealth  = bool(args.stealth)
+    use_rustscan = bool(rustscan_bin) and not args.no_rustscan and not use_stealth
+    use_naabu    = bool(naabu_bin) and use_stealth
     use_amass    = bool(amass_bin) and not args.no_amass
     use_socket   = not args.no_socket
     use_wordlist = not args.no_wordlist
+    amass_passive = use_stealth
+    amass_timeout = 3600 if use_stealth else args.amass_timeout
 
-    banner(target, use_rustscan, use_amass, is_root)
+    banner(target, use_rustscan, use_naabu, use_amass, is_root, use_stealth)
 
-    if use_rustscan and is_root:
+    if use_stealth and use_naabu:
+        log("naabu", f"{MG}Naabu stealth mode enabled{R}")
+    elif use_rustscan and is_root:
         log("rs", f"{GN}SYN scan + OS fingerprinting enabled (root){R}")
     elif use_rustscan:
         log("warn", "Non-root: using -sT (TCP connect), no OS fingerprint")
 
-    if use_rustscan and not nmap_bin and not args.rustscan_greppable:
-        log("warn", "nmap not found — RustScan will fall back to greppable output")
+    if use_stealth and not naabu_bin:
+        log("warn", "naabu not found — stealth mode will fall back to Nmap/socket scanning")
+        log("warn", "  install: go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest")
 
-    if not rustscan_bin and not args.no_rustscan:
+    if use_stealth and not nmap_bin:
+        log("warn", "nmap not found — stealth mode will fall back to socket/full scan if Naabu fails")
+    elif use_rustscan and not nmap_bin:
+        log("warn", "nmap not found — fallback Nmap scan will be unavailable if RustScan fails")
+
+    if not use_stealth and not rustscan_bin and not args.no_rustscan:
         log("warn", "rustscan not found — using socket scanner only")
         log("warn", "  install: cargo install rustscan")
 
@@ -1000,19 +1282,20 @@ def main():
         log("info", "DNS chain resolution…")
         dns_chain(target, g, root_id, args.timeout)
 
-    # ── 2. Subdomain enumeration (amass passive + wordlist, parallel) ─────────
+    # ── 2. Subdomain enumeration (amass + wordlist, parallel) ────────────────
     found_subs: list[str] = []
     if not args.no_subs:
         log("info", f"{'─'*50}")
         log("info", f"Subdomain enumeration  "
-                    f"[amass={'passive' if use_amass else 'skip'}  "
+                    f"[amass={'passive' if amass_passive else 'active' if use_amass else 'skip'}  "
                     f"wordlist={'yes' if use_wordlist else 'skip'}]")
         found_subs = enum_subdomains(
             target, g, root_id,
             amass_bin, wordlist,
             args.timeout, args.threads,
             use_amass, use_wordlist,
-            args.amass_timeout,
+            amass_timeout,
+            amass_passive,
         )
 
     # ── 3. Port scanning: rustscan + socket ──────────────────────────────────
@@ -1028,17 +1311,18 @@ def main():
                       else f"ip:{st}"   if f"ip:{st}" in g.nodes
                       else root_id)
             log("info", f"{'─'*50}")
-            log("info", f"Scanning {B}{st}{R}  "
-                        f"[{'rustscan+socket' if use_rustscan else 'socket'}]")
+            scan_mode = "naabu+nmap+fallback" if use_stealth else ("rustscan+socket" if use_rustscan else "socket")
+            log("info", f"Scanning {B}{st}{R}  [{scan_mode}]")
             open_p = scan_host(
                 st, fallback_ports, g, parent,
                 args.timeout, args.threads,
-                rustscan_bin, nmap_bin,
-                is_root, use_rustscan, use_socket,
+                rustscan_bin, naabu_bin, nmap_bin,
+                is_root, use_stealth, use_rustscan, use_socket,
                 args.rustscan_greppable, args.rustscan_batch_size,
                 args.rustscan_timeout, args.rustscan_retries,
                 args.rustscan_min_batch_size,
                 args.rustscan_nofile_soft,
+                args.rustscan_process_timeout,
             )
             all_open[st] = open_p
 
@@ -1065,6 +1349,10 @@ def main():
         "rustscan_nofile_soft": args.rustscan_nofile_soft,
         "rustscan_timeout_ms": args.rustscan_timeout,
         "amass_used":   use_amass,
+        "amass_passive": amass_passive,
+        "amass_timeout_s": amass_timeout,
+        "stealth_used":  use_stealth,
+        "naabu_used":    use_naabu,
         "root_scan":    is_root,
         "node_count":   len(g.nodes),
         "edge_count":   len(g.edges),
@@ -1079,8 +1367,9 @@ def main():
   {GN}Nodes      :{R} {len(g.nodes)}
   {GN}Edges      :{R} {len(g.edges)}
   {GN}Subdomains :{R} {len(found_subs)}
-  {GN}amass      :{R} {GN+'passive ✓'+R if use_amass else GY+'skipped'+R}
-  {GN}rustscan   :{R} {GN+'✓'+R if use_rustscan else GY+'skipped (socket fallback)'+R}
+  {GN}amass      :{R} {GN+(('passive ✓' if amass_passive else 'active ✓'))+R if use_amass else GY+'skipped'+R}
+  {GN}stealth    :{R} {GN+'✓'+R if use_stealth else GY+'off'+R}
+  {GN}rustscan   :{R} {GN+'✓'+R if use_rustscan else GY+'skipped (naabu/socket fallback)'+R}
   {GN}root scan  :{R} {GN+'SYN+OS'+R if is_root else YL+'TCP connect'+R}
   {GN}output     :{R} {out_path}
 {CY}{'─'*54}{R}

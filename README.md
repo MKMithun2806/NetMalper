@@ -1,16 +1,16 @@
 ## <p align="left"><img src="debian/logo.svg" alt="NETMALPER" height="500"></p>
 ![License](https://img.shields.io/badge/license-MIT-red.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20MacOS-black.svg)
-![Status](https://img.shields.io/badge/version-7.2.0--stable-orange)
+![Status](https://img.shields.io/badge/version-8.0.0--stable-orange)
 
 **Automated Reconnaissance & 3D Intelligence Mapping**
 
 ---
 
 # Features
-- **Hybrid Subdomain Discovery**: Merges Amass passive OSINT with high-speed DNS brute-forcing.
-- **Advanced Port Scanning**: RustScan-first discovery with Nmap handoff, plus socket/full-Nmap fallback only after RustScan exhausts all retries.
-- **RustScan-Gated Fallbacks**: Socket and Nmap scans stay idle until RustScan returns no usable ports across all retries.
+- **Hybrid Subdomain Discovery**: Merges Amass active mode by default with passive mode in `--stealth`, plus high-speed DNS brute-forcing.
+- **Advanced Port Scanning**: Standard mode uses RustScan-first discovery with Nmap handoff. `--stealth` skips RustScan and sends Naabu-discovered ports straight to Nmap for deep scanning.
+- **Controlled Fallbacks**: Socket and full-Nmap scans stay idle until the primary scanner exhausts all retries or returns no usable ports.
 - **Visual Intelligence**: Generates interactive, force-directed graph maps for complex network visualization.
 - **Resilient**: Automatic `ulimit` (NOFILE) handling and intelligent backoff for high-concurrency scans.
 
@@ -33,8 +33,9 @@ or use `--open-viewer`.
 | `--out FILE` | Output JSON file path. Default: `<target>_graph.json`. |
 | `--timeout SEC` | Per-probe timeout in seconds. Default: `3`. |
 | `--threads N` | Thread count for parallel tasks. Default: `30`. |
-| `--amass-timeout SEC` | Amass passive scan timeout in seconds. Default: `120`. |
-| `--no-amass` | Skip Amass passive enumeration. |
+| `--amass-timeout SEC` | Amass active-mode timeout in seconds. Default: `1800`. `--stealth` switches Amass to passive mode with a `3600` second timeout. |
+| `--stealth` | Skip RustScan, use Naabu for port discovery, then send discovered ports straight to Nmap for deep scanning. |
+| `--no-amass` | Skip Amass enumeration. |
 | `--no-wordlist` | Skip built-in + custom wordlist brute-force. |
 | `--no-rustscan` | Skip RustScan and use the socket scanner only. |
 | `--rustscan-batch-size N` | RustScan batch size. Default: `4500`. |
@@ -60,6 +61,13 @@ or use `--open-viewer`.
 docker run --rm -it --network host -v $(pwd):/app mitchaster/malper-suite:latest <target>
 ```
 
+### Stealth Mode
+`--stealth` requires `naabu` and `nmap` in your PATH. In this mode NetMalper:
+- runs Amass in passive mode with a 1 hour timeout
+- skips RustScan entirely
+- scans ports with Naabu
+- hands Naabu-discovered ports straight to Nmap for deeper analysis
+
 ---
 
 ## Native Installation (Debian/Ubuntu/Kali)
@@ -72,10 +80,16 @@ sudo apt install -y ./netmalper.deb && \
 rm -f netmalper.deb
 ```
 
+For `--stealth`, also install Naabu:
+```bash
+go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
+```
+
 ## For MacOS
 
 ```bash
-brew install nmap rustscan amass python3
+brew install nmap rustscan amass python3 libpcap
+go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
 curl -L -o NetMalper "https://raw.githubusercontent.com/MKMithun2806/NetMalper/main/netmalper.py"
 chmod +x NetMalper
 sudo mv NetMalper /usr/local/bin/
@@ -85,6 +99,8 @@ sudo mv NetMalper /usr/local/bin/
 
 ```bash
 winget install nmap rustscan
+# Install Npcap before using Naabu on Windows.
+go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MKMithun2806/NetMalper/main/netmalper.py" -OutFile "netmalper.py"
 python netmalper.py <target>
 ```
