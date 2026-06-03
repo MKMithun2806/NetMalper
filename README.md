@@ -7,6 +7,10 @@
 
 ---
 
+<img width="2559" height="1599" alt="capture_20260603_120907" src="https://github.com/user-attachments/assets/4b6f4505-5ca9-4971-aac0-aceab0e7b608" />
+
+---
+
 # Features
 - **Hybrid Subdomain Discovery**: Merges Amass active mode by default with passive mode in `--stealth`, plus high-speed DNS brute-forcing.
 - **Advanced Port Scanning**: Standard mode uses RustScan-first discovery with Nmap handoff. `--stealth` skips RustScan and sends Naabu-discovered ports straight to Nmap for deep scanning.
