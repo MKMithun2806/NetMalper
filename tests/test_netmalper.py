@@ -47,6 +47,27 @@ def test_parse_naabu_ports_no_false_positive():
     assert parse_naabu_ports("host:70000") == []
 
 
+def test_extract_fqdns_bare_lines():
+    assert cli._extract_fqdns("www.example.com", "example.com") == ["www.example.com"]
+    assert cli._extract_fqdns("example.com", "example.com") == []
+
+
+def test_extract_fqdns_relation_lines():
+    line = "www.example.com (FQDN) --> A --> 1.2.3.4 (IPAddress)"
+    assert cli._extract_fqdns(line, "example.com") == ["www.example.com"]
+    assert cli._extract_fqdns(line, "other.com") == []
+
+
+def test_extract_fqdns_ignores_junk():
+    line = "--> (FQDN) --> 10.0.0.1 (IPAddress) -->"
+    assert cli._extract_fqdns(line, "example.com") == []
+
+
+def test_extract_fqdns_dedupes_and_sorts():
+    line = "b.example.com --> a.example.com --> b.example.com"
+    assert cli._extract_fqdns(line, "example.com") == ["a.example.com", "b.example.com"]
+
+
 def test_extract_nmap_xml():
     xml = '<?xml version="1.0"?><nmaprun><host/></nmaprun>'
     assert extract_nmap_xml(xml) == xml

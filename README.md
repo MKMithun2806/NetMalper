@@ -52,7 +52,7 @@ or use `--open-viewer`.
 | `--no-ports` | Skip all port scanning. |
 | `--no-subs` | Skip subdomain enumeration. |
 | `--no-dns` | Skip DNS chain resolution. |
-| `--open-viewer` | Automatically open the HTML graph viewer after scan. |
+| `--open-viewer` | Automatically open the HTML graph viewer after scan. Note: browsers may block `file://` auto-loading of the graph JSON (the viewer opens via `file://...?graph=file://...`), so the graph may not render on load — use the viewer's "load JSON" / drag-and-drop option in that case. |
 | `--viewer FILE` | Specify custom path to `netmalper_visualizer.html`. |
 
 ---

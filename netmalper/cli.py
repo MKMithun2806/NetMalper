@@ -279,6 +279,23 @@ BUILTIN_SUBS = [
 ]
 
 # ── amass enumeration ─────────────────────────────────────────────────────────
+def _extract_fqdns(line: str, target: str) -> list[str]:
+    """Pull FQDNs belonging to ``target`` out of one amass output line.
+
+    Amass output varies by version: some write bare FQDNs, others write
+    relation lines such as ``sub.example.com (FQDN) --> A --> 1.2.3.4
+    (IPAddress)``.  Matching a token regex keeps both forms working and
+    ignores IPs, record types and arrow separators.
+    """
+    tgt = target.lower()
+    out: set[str] = set()
+    for tok in re.findall(r"[A-Za-z0-9_*.-]+", line):
+        fqdn = tok.strip(".").lower()
+        if fqdn and fqdn != tgt and fqdn.endswith(f".{tgt}"):
+            out.add(fqdn)
+    return sorted(out)
+
+
 def run_amass(target: str, amass_bin: str, timeout: int, passive: bool) -> set[str]:
     """Run amass enum in passive or active mode and return discovered FQDNs."""
     mode = "passive" if passive else "active"
@@ -309,8 +326,7 @@ def run_amass(target: str, amass_bin: str, timeout: int, passive: bool) -> set[s
     if os.path.exists(out_file):
         with open(out_file) as f:
             for line in f:
-                fqdn = line.strip().lower()
-                if fqdn and fqdn != target and fqdn.endswith(f".{target}"):
+                for fqdn in _extract_fqdns(line, target):
                     found.add(fqdn)
         os.unlink(out_file)
 
