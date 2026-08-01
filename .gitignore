@@ -1,6 +1,17 @@
-netmalper-shot.png
+# Python
 __pycache__/
 __pycache__
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Debian build artifacts
 netmalper_V5_all.deb
 *.deb
 debian/netmalper/
@@ -8,4 +19,10 @@ debian/.debhelper/
 debian/*.substvars
 debian/files
 debian/debhelper-build-stamp
-work/
+
+# Misc
+netmalper-shot.png
+
+# work dir (Dockerfile is tracked, everything else is scratch)
+work/*
+!work/Dockerfile

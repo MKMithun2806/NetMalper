@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netmalper"
+description = "Automated Reconnaissance & 3D Intelligence Mapping"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [{name = "MKMithun2806"}]
+keywords = ["recon", "security", "nmap", "rustscan", "amass", "naabu", "dns", "graph"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+]
+dynamic = ["version"]
+
+[project.scripts]
+netmalper = "netmalper.cli:entry"
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "build>=1"]
+
+[tool.setuptools]
+packages = ["netmalper"]
+
+[tool.setuptools.dynamic]
+version = {attr = "netmalper.cli.VERSION"}
+
+[tool.setuptools.package-data]
+netmalper = ["*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

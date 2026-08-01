@@ -73,6 +73,29 @@ except ImportError:  # pragma: no cover - non-Unix platforms
 VERSION = "8.0.0"
 RUSTSCAN_PROCESS_TIMEOUT_MAX = 1800
 
+def resolve_viewer(viewer_arg: str) -> Optional[str]:
+    """Locate the HTML viewer shipped with the package, deb, or repo."""
+    candidates = []
+    if viewer_arg and viewer_arg != "netmalper_vizualizer.html":
+        candidates.append(Path(viewer_arg))
+    candidates += [
+        Path("/usr/share/netmalper/netmalper_vizualizer.html"),
+        Path(sys.prefix) / "share/netmalper/netmalper_vizualizer.html",
+    ]
+    try:
+        import importlib.resources as ilr
+        candidates.append(Path(str(ilr.files("netmalper").joinpath("netmalper_vizualizer.html"))))
+    except Exception:
+        pass
+    candidates.append(Path("netmalper_vizualizer.html"))
+    for c in candidates:
+        try:
+            if c.is_file():
+                return str(c)
+        except Exception:
+            pass
+    return None
+
 # ── colours ───────────────────────────────────────────────────────────────────
 R  = "\033[0m";  B  = "\033[1m"
 CY = "\033[96m"; GN = "\033[92m"; YL = "\033[93m"
@@ -1159,6 +1182,7 @@ def main():
         epilog=__doc__,
     )
     ap.add_argument("target")
+    ap.add_argument("--version", action="version", version=f"netmalper {VERSION}")
     ap.add_argument("--subdomains",     default=None,
                     help="Extra wordlist file — merged with built-in list")
     ap.add_argument("--out",            default=None)
@@ -1201,9 +1225,7 @@ def main():
     target = target.split('/')[0].split('?')[0].rstrip('.')
     safe_name = re.sub(r'[^\w.\-]', '_', target)
     out_path  = args.out or f"{safe_name}_graph.json"
-    packaged_viewer = Path("/usr/share/netmalper/netmalper_vizualizer.html")
-    if args.viewer == "netmalper_vizualizer.html" and packaged_viewer.exists():
-        args.viewer = str(packaged_viewer)
+    args.viewer = resolve_viewer(args.viewer)
 
     # ── detect tools ──────────────────────────────────────────────────────────
     is_root   = check_root()
@@ -1375,7 +1397,7 @@ def main():
 {CY}{'─'*54}{R}
 """)
 
-    if args.open_viewer and os.path.exists(args.viewer):
+    if args.open_viewer and args.viewer and os.path.exists(args.viewer):
         import webbrowser
         graph_uri = Path(out_path).resolve().as_uri()
         webbrowser.open(
@@ -1384,6 +1406,11 @@ def main():
         )
 
     return out_path
+
+def entry() -> int:
+    """Console-script entry point: run a scan and exit cleanly."""
+    main()
+    return 0
 
 if __name__ == "__main__":
     main()

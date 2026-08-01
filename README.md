@@ -59,10 +59,23 @@ or use `--open-viewer`.
 
 # How To Use:
 
+## Install (Python)
+NetMalper is a standard Python project — install it with `pip` or `uv`:
+
+```bash
+# from this repository
+pip install .
+netmalper <target>
+
+# or with uv
+uv tool install .
+netmalper <target>
+```
+
 ## QuickStart (Docker)
 *The easiest way to run NetMalper without installing dependencies:*
 ```bash
-docker run --rm -it --network host -v $(pwd):/app mitchaster/malper-suite:latest <target>
+docker run --rm -it --network host -v $(pwd):/app ghcr.io/MKMithun2806/NetMalper:latest <target>
 ```
 
 ### Stealth Mode
@@ -94,9 +107,9 @@ go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
 ```bash
 brew install nmap rustscan amass python3 libpcap
 go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
-curl -L -o NetMalper "https://raw.githubusercontent.com/MKMithun2806/NetMalper/main/netmalper.py"
-chmod +x NetMalper
-sudo mv NetMalper /usr/local/bin/
+git clone https://github.com/MKMithun2806/NetMalper.git && cd NetMalper
+pip install .
+netmalper <target>
 ```
 
 ## For Windows (Requires Admin)
@@ -105,6 +118,7 @@ sudo mv NetMalper /usr/local/bin/
 winget install nmap rustscan
 # Install Npcap before using Naabu on Windows.
 go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MKMithun2806/NetMalper/main/netmalper.py" -OutFile "netmalper.py"
-python netmalper.py <target>
+git clone https://github.com/MKMithun2806/NetMalper.git && cd NetMalper
+pip install .
+netmalper <target>
 ```
