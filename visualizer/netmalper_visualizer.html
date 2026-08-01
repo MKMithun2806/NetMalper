@@ -827,6 +827,11 @@ function text(v) {
   return String(v);
 }
 
+function flag(value, yes = "yes", no = "no") {
+  if (value === undefined || value === null) return "—";
+  return value ? yes : no;
+}
+
 function formatTime(ts) {
   if (!ts) return "—";
   const d = new Date(ts);
@@ -1209,13 +1214,19 @@ function App() {
 
   function loadGraphFromUrl(raw) {
     const url = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(raw) ? raw : (raw.startsWith("/") ? `file://${raw}` : raw);
+    const isLocalFile = url.startsWith("file://");
     fetch(url)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         return res.json();
       })
       .then((json) => applyGraph(json, raw))
-      .catch((err) => setError(`Could not auto-load graph: ${err.message}`));
+      .catch((err) => {
+        const hint = isLocalFile
+          ? ' Browsers block fetching local "file://" URLs — use "load JSON" or drop the graph file instead.'
+          : "";
+        setError(`Could not auto-load graph: ${err.message}.${hint}`);
+      });
   }
 
   function loadFile(file) {
@@ -1298,10 +1309,10 @@ function App() {
           <div className="meta-chip">edges <strong>${edgeTotal}</strong></div>
           <div className="meta-chip">scanned <strong>${scanTime}</strong></div>
           <div className="meta-chip">duration <strong>${duration}</strong></div>
-          <div className="meta-chip">nmap <strong>${meta.nmap_used ? "enabled" : "off"}</strong></div>
-          <div className="meta-chip">naabu <strong>${meta.naabu_used ? "enabled" : "off"}</strong></div>
-          <div className="meta-chip">amass <strong>${meta.amass_used ? "enabled" : "off"}</strong></div>
-          <div className="meta-chip">root <strong>${meta.root_scan ? "yes" : "no"}</strong></div>
+          <div className="meta-chip">nmap <strong>${flag(meta.nmap_used, "enabled", "off")}</strong></div>
+          <div className="meta-chip">naabu <strong>${flag(meta.naabu_used, "enabled", "off")}</strong></div>
+          <div className="meta-chip">amass <strong>${flag(meta.amass_used, "enabled", "off")}</strong></div>
+          <div className="meta-chip">root <strong>${flag(meta.root_scan)}</strong></div>
         </div>
 
         <div className="top-actions">
@@ -1521,7 +1532,7 @@ const DEMO_GRAPH = {
     target: "example.com",
     timestamp: new Date().toISOString(),
     duration_s: 12.3,
-    version: "2.0.0",
+    version: "8.0.0",
     nmap_used: true,
     naabu_used: true,
     amass_used: true,
