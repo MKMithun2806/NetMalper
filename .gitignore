@@ -23,6 +23,5 @@ debian/debhelper-build-stamp
 # Misc
 netmalper-shot.png
 
-# work dir (Dockerfile is tracked, everything else is scratch)
-work/*
-!work/Dockerfile
+# work dir (scratch space)
+work/
