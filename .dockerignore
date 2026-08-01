@@ -1,0 +1,15 @@
+.git
+.github
+.gitignore
+debian
+Examples
+tests
+dist
+build
+*.egg-info
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.deb
+*.whl
