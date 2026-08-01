@@ -1,6 +1,8 @@
+import socket
 import subprocess
 import sys
 
+import netmalper.cli as cli
 from netmalper.cli import (
     VERSION,
     extract_nmap_xml,
@@ -43,6 +45,31 @@ def test_extract_nmap_xml_none():
     assert extract_nmap_xml("no xml here") is None
 
 
+def test_resolve_host_dedupes_and_sorts(monkeypatch):
+    def fake_getaddrinfo(host, port):
+        return [
+            (2, 1, 6, "", ("1.2.3.4", 0)),
+            (2, 1, 6, "", ("1.2.3.4", 0)),
+            (2, 1, 6, "", ("5.6.7.8", 0)),
+        ]
+
+    monkeypatch.setattr(cli.socket, "getaddrinfo", fake_getaddrinfo)
+    assert cli.resolve_host("example.com", timeout=1) == ["1.2.3.4", "5.6.7.8"]
+
+
+def test_brute_subdomains_collects_live_names(monkeypatch):
+    live = {"www.example.com", "api.example.com"}
+
+    def fake_getaddrinfo(host, port):
+        if host in live:
+            return [(2, 1, 6, "", (host, 0))]
+        raise socket.gaierror("no such name")
+
+    monkeypatch.setattr(cli.socket, "getaddrinfo", fake_getaddrinfo)
+    found = cli.brute_subdomains("example.com", ["www", "api", "nope"], timeout=1, threads=4)
+    assert found == {"www.example.com", "api.example.com"}
+
+
 def test_cli_version():
     result = subprocess.run(
         [sys.executable, "-m", "netmalper", "--version"],
@@ -61,3 +88,4 @@ def test_cli_help():
     )
     assert result.returncode == 0
     assert "target" in result.stdout
+

@@ -47,6 +47,7 @@ Options:
 
 import argparse
 import concurrent.futures
+import contextlib
 import ipaddress
 import json
 import os
@@ -169,18 +170,51 @@ class Graph:
         return {"meta": meta, "nodes": list(self.nodes.values()), "edges": self.edges}
 
 # ── DNS ───────────────────────────────────────────────────────────────────────
+@contextlib.contextmanager
+def _socket_timeout(timeout: int):
+    """Temporarily bound every socket operation (incl. DNS) in this thread."""
+    previous = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(max(1, timeout))
+    try:
+        yield
+    finally:
+        socket.setdefaulttimeout(previous)
+
+def resolve_host(fqdn: str, timeout: int = 3) -> list[str]:
+    """Resolve ``fqdn`` to a sorted, de-duplicated list of IP strings.
+
+    ``socket.getaddrinfo`` takes no timeout argument, so we bound it through
+    the module-wide default socket timeout.
+    """
+    with _socket_timeout(timeout):
+        ips_raw = socket.getaddrinfo(fqdn, None)
+    return sorted({r[4][0] for r in ips_raw})
+
+_DIG_CHECKED = {"path": None, "checked": False}
+def dig_path() -> Optional[str]:
+    """Return the path to ``dig`` (cached), or None if unavailable."""
+    if not _DIG_CHECKED["checked"]:
+        _DIG_CHECKED["path"] = shutil.which("dig")
+        _DIG_CHECKED["checked"] = True
+    return _DIG_CHECKED["path"]
+
 def dns_chain(fqdn: str, g: Graph, parent_id: str, timeout: int = 3):
     current, prev_id, depth, seen = fqdn, parent_id, 0, set()
     while depth < 10:
         if current in seen: break
         seen.add(current); depth += 1
         cname_target = None
-        try:
-            r = subprocess.run(["dig", "+short", "CNAME", current],
-                               capture_output=True, text=True, timeout=timeout)
-            lines = [l.strip().rstrip(".") for l in r.stdout.strip().splitlines() if l.strip()]
-            if lines: cname_target = lines[0]
-        except Exception: pass
+        dig = dig_path()
+        if dig:
+            try:
+                r = subprocess.run([dig, "+short", "CNAME", current],
+                                   capture_output=True, text=True, timeout=timeout)
+                lines = [l.strip().rstrip(".") for l in r.stdout.strip().splitlines() if l.strip()]
+                if lines: cname_target = lines[0]
+            except subprocess.TimeoutExpired:
+                log("warn", f"  dig timed out for {current}")
+            except Exception:
+                pass
 
         if cname_target:
             nid = f"cname:{cname_target}"
@@ -190,8 +224,7 @@ def dns_chain(fqdn: str, g: Graph, parent_id: str, timeout: int = 3):
             prev_id, current = nid, cname_target
         else:
             try:
-                ips = socket.getaddrinfo(current, None)
-                for ip in {r[4][0] for r in ips}:
+                for ip in resolve_host(current, timeout):
                     nid = f"ip:{ip}"
                     try:    rdns, _, _ = socket.gethostbyaddr(ip)
                     except: rdns = ip
@@ -295,16 +328,18 @@ def brute_subdomains(target: str, wordlist: list[str],
     def check(sub):
         fqdn = f"{sub}.{target}" if not sub.endswith(f".{target}") else sub
         try:
-            socket.getaddrinfo(fqdn, None, timeout=timeout)
-            return fqdn
+            return fqdn if socket.getaddrinfo(fqdn, None) else None
         except Exception:
             return None
 
     log("sub", f"Wordlist brute-force: {len(wordlist)} candidates ({threads} threads)…")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as ex:
-        for result in ex.map(check, wordlist):
-            if result:
-                found.add(result)
+    # getaddrinfo has no timeout kwarg: set the module-wide default timeout once
+    # for the whole pool (all workers share it) instead of per-call set/reset.
+    with _socket_timeout(timeout):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as ex:
+            for result in ex.map(check, wordlist):
+                if result:
+                    found.add(result)
 
     log("sub", f"  found {GN}{len(found)}{R} subdomains via brute-force")
     return found
@@ -342,8 +377,7 @@ def enum_subdomains(target: str, g: Graph, root_id: str,
     confirmed = []
     for fqdn in sorted(all_fqdns):
         try:
-            ips_raw = socket.getaddrinfo(fqdn, None)
-            ips     = list({r[4][0] for r in ips_raw})
+            ips = resolve_host(fqdn, timeout)
         except Exception:
             continue  # couldn't resolve — skip
 
@@ -1268,6 +1302,10 @@ def main():
     if not amass_bin and not args.no_amass:
         log("warn", "amass not found — wordlist brute-force only")
         log("warn", "  install: go install -v github.com/owasp-amass/amass/v4/...@master")
+
+    if not args.no_dns and not dig_path():
+        log("warn", "dig not found — CNAME resolution in DNS chains will be skipped")
+        log("warn", "  install dnsutils (Debian/Ubuntu) or bind-tools (macOS via brew)")
 
     # ── build wordlist ────────────────────────────────────────────────────────
     wordlist = list(BUILTIN_SUBS)
