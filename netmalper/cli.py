@@ -923,7 +923,8 @@ def run_fallback_scans(host: str, fallback_ports: list[int], g: Graph, parent_id
                        rustscan_process_timeout: int) -> tuple[list[int], bool, bool, int]:
     """
     Run fallback scanning after RustScan fails.
-    Prefer a full Nmap scan, then fall back to the socket scanner if needed.
+    Prefer a Nmap scan over DEFAULT_PORTS, then fall back to the socket
+    scanner if needed.
     """
     fallback_ports = list(fallback_ports)
 
@@ -933,12 +934,14 @@ def run_fallback_scans(host: str, fallback_ports: list[int], g: Graph, parent_id
     used_socket = False
     socket_open_count = 0
     if nmap_bin:
+        # Scan the common ports instead of a full -p- sweep (which can take
+        # 10+ minutes) — obscure ports are out of scope for a fallback.
         nmap_results, nmap_ports = run_nmap_scan(
             host,
             nmap_bin,
             is_root,
             rustscan_process_timeout,
-            None,
+            DEFAULT_PORTS,
         )
         if nmap_results:
             inject_rustscan(nmap_results, host, g, parent_id, source="nmap")
