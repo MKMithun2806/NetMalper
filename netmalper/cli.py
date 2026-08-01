@@ -310,10 +310,8 @@ def run_amass(target: str, amass_bin: str, timeout: int, passive: bool) -> set[s
         with open(out_file) as f:
             for line in f:
                 fqdn = line.strip().lower()
-                if fqdn and fqdn.endswith(f".{target}") or fqdn == target:
-                    # strip the root domain to get just the subdomain prefix
-                    if fqdn != target:
-                        found.add(fqdn)
+                if fqdn and fqdn != target and fqdn.endswith(f".{target}"):
+                    found.add(fqdn)
         os.unlink(out_file)
 
     log("amass", f"  found {GN}{len(found)}{R} subdomains via {mode} OSINT")
@@ -874,12 +872,11 @@ def parse_naabu_ports(output: str) -> list[int]:
                     continue
             except Exception:
                 pass
-        match = re.search(r":(\d{1,5})\b", line)
-        if match:
-            try:
-                ports.add(int(match.group(1)))
-            except ValueError:
-                pass
+        # Non-JSON output (e.g. -silent "host:port"). Only accept a single
+        # trailing port token so "host:10.0.0.1" cannot be misread as 10.
+        host, sep, port_txt = line.rpartition(":")
+        if sep and host and port_txt.isdigit() and 1 <= int(port_txt) <= 65535:
+            ports.add(int(port_txt))
     return sorted(ports)
 
 
@@ -1179,7 +1176,7 @@ def probe_http(host: str, g: Graph, parent_id: str,
         url = (f"{scheme}://{host}:{port}{path}"
                if port not in (80, 443) else f"{scheme}://{host}{path}")
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "netmalper/3.0"})
+            req = urllib.request.Request(url, headers={"User-Agent": f"netmalper/{VERSION}"})
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return url, resp.status, \
                        resp.headers.get("Content-Type",""), \

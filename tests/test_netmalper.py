@@ -36,6 +36,17 @@ def test_parse_naabu_ports():
     assert parse_naabu_ports(out) == [80]
 
 
+def test_parse_naabu_ports_silent_lines():
+    out = "scanme.nmap.org:22\n10.0.0.1:443\n"
+    assert parse_naabu_ports(out) == [22, 443]
+
+
+def test_parse_naabu_ports_no_false_positive():
+    assert parse_naabu_ports("host:10.0.0.1") == []
+    assert parse_naabu_ports("no colon here") == []
+    assert parse_naabu_ports("host:70000") == []
+
+
 def test_extract_nmap_xml():
     xml = '<?xml version="1.0"?><nmaprun><host/></nmaprun>'
     assert extract_nmap_xml(xml) == xml
