@@ -42,7 +42,7 @@ Options:
   --no-subs              Skip all subdomain enumeration
   --no-dns               Skip DNS chain resolution
   --open-viewer          Open viewer after scan
-  --viewer FILE          Path to netmalper_vizualizer.html
+  --viewer FILE          Path to netmalper_visualizer.html
 """
 
 import argparse
@@ -76,18 +76,18 @@ RUSTSCAN_PROCESS_TIMEOUT_MAX = 1800
 def resolve_viewer(viewer_arg: str) -> Optional[str]:
     """Locate the HTML viewer shipped with the package, deb, or repo."""
     candidates = []
-    if viewer_arg and viewer_arg != "netmalper_vizualizer.html":
+    if viewer_arg and viewer_arg != "netmalper_visualizer.html":
         candidates.append(Path(viewer_arg))
     candidates += [
-        Path("/usr/share/netmalper/netmalper_vizualizer.html"),
-        Path(sys.prefix) / "share/netmalper/netmalper_vizualizer.html",
+        Path("/usr/share/netmalper/netmalper_visualizer.html"),
+        Path(sys.prefix) / "share/netmalper/netmalper_visualizer.html",
     ]
     try:
         import importlib.resources as ilr
-        candidates.append(Path(str(ilr.files("netmalper").joinpath("netmalper_vizualizer.html"))))
+        candidates.append(Path(str(ilr.files("visualizer").joinpath("netmalper_visualizer.html"))))
     except Exception:
         pass
-    candidates.append(Path("netmalper_vizualizer.html"))
+    candidates.append(Path("netmalper_visualizer.html"))
     for c in candidates:
         try:
             if c.is_file():
@@ -1216,7 +1216,7 @@ def main():
     ap.add_argument("--no-subs",        action="store_true")
     ap.add_argument("--no-dns",         action="store_true")
     ap.add_argument("--open-viewer",    action="store_true")
-    ap.add_argument("--viewer",         default="netmalper_vizualizer.html")
+    ap.add_argument("--viewer",         default="netmalper_visualizer.html")
     args = ap.parse_args()
 
     # ── sanitize target ───────────────────────────────────────────────────────
@@ -1374,6 +1374,7 @@ def main():
         "amass_passive": amass_passive,
         "amass_timeout_s": amass_timeout,
         "stealth_used":  use_stealth,
+        "nmap_used":    bool(nmap_bin),
         "naabu_used":    use_naabu,
         "root_scan":    is_root,
         "node_count":   len(g.nodes),

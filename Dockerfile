@@ -105,10 +105,10 @@ LABEL org.opencontainers.image.title="netmalper" \
 
 COPY pyproject.toml README.md LICENSE ./
 COPY netmalper/ ./netmalper/
-COPY netmalper_vizualizer.html ./
+COPY visualizer/ ./visualizer/
 
 RUN pip install --no-cache-dir . && \
-    rm -rf netmalper netmalper_vizualizer.html README.md LICENSE pyproject.toml *.egg-info
+    rm -rf netmalper visualizer README.md LICENSE pyproject.toml *.egg-info
 
 ENV WORDLIST_PATH="/app/wordlists/subdomains-small.txt"
 

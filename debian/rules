@@ -5,7 +5,7 @@
 override_dh_auto_install:
 	install -D -m 0755 debian/netmalper-wrapper.sh debian/netmalper/usr/bin/NetMalper
 	install -D -m 0644 netmalper/cli.py debian/netmalper/usr/share/netmalper/netmalper.py
-	install -D -m 0644 netmalper_vizualizer.html debian/netmalper/usr/share/netmalper/netmalper_vizualizer.html
+	install -D -m 0644 visualizer/netmalper_visualizer.html debian/netmalper/usr/share/netmalper/netmalper_visualizer.html
 
 override_dh_builddeb:
 	@set -eu; \

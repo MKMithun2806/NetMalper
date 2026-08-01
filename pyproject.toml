@@ -31,13 +31,13 @@ netmalper = "netmalper.cli:entry"
 dev = ["pytest>=7", "build>=1"]
 
 [tool.setuptools]
-packages = ["netmalper"]
+packages = ["netmalper", "visualizer"]
 
 [tool.setuptools.dynamic]
 version = {attr = "netmalper.cli.VERSION"}
 
 [tool.setuptools.package-data]
-netmalper = ["*.html"]
+visualizer = ["*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
