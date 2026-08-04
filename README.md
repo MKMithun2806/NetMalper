@@ -75,7 +75,7 @@ netmalper <target>
 ## QuickStart (Docker)
 *The easiest way to run NetMalper without installing dependencies:*
 ```bash
-docker run --rm -it --network host -v $(pwd):/app ghcr.io/MKMithun2806/NetMalper:latest <target>
+docker run --rm -it --network host -v $(pwd):/app ghcr.io/mkmithun2806/netmalper:latest <target>
 ```
 
 ### Stealth Mode
